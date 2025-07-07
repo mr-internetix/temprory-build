@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const navItems = [
     {
@@ -101,6 +103,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {item.label}
                   </Link>
                 ))}
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="flex-1 flex justify-center px-6 lg:ml-6 lg:justify-end">
+              <div className="max-w-lg w-full lg:max-w-xs">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Icon
+                      icon="heroicons:magnifying-glass"
+                      className="h-5 w-5 text-slate-400"
+                    />
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder="Search projects..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                  />
+                </div>
               </div>
             </div>
 
