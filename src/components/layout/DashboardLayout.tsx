@@ -209,8 +209,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             {/* Search Bar with Suggestions */}
-            <div className="flex-1 max-w-md mx-auto">
-              <div className="relative">
+            <div className="flex-1 max-w-md mx-auto flex items-center">
+              <div className="relative w-full">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Icon
