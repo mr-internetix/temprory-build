@@ -209,33 +209,32 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            {/* Search Bar with Suggestions */}
-            <div className="flex-1 max-w-md mx-auto flex items-center">
-              <div className="relative w-full">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Icon
-                      icon="heroicons:magnifying-glass"
-                      className="h-5 w-5 text-slate-400"
-                    />
-                  </div>
-                  <Input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setShowSearchSuggestions(e.target.value.length > 0);
-                    }}
-                    onFocus={() =>
-                      setShowSearchSuggestions(searchQuery.length > 0)
-                    }
-                    onBlur={() =>
-                      setTimeout(() => setShowSearchSuggestions(false), 200)
-                    }
-                    className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+            {/* Center - Search Bar */}
+            <div className="flex-1 max-w-md mx-6">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Icon
+                    icon="heroicons:magnifying-glass"
+                    className="h-5 w-5 text-slate-400"
                   />
                 </div>
+                <Input
+                  type="text"
+                  placeholder="Search projects..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSearchSuggestions(e.target.value.length > 0);
+                  }}
+                  onFocus={() =>
+                    setShowSearchSuggestions(searchQuery.length > 0)
+                  }
+                  onBlur={() =>
+                    setTimeout(() => setShowSearchSuggestions(false), 200)
+                  }
+                  className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                />
+              </div>
 
                 {/* Search Suggestions */}
                 {showSearchSuggestions && searchQuery && (
