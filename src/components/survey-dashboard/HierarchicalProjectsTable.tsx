@@ -189,10 +189,10 @@ export function HierarchicalProjectsTable({
 
   // Column filters
   const [filters, setFilters] = useState({
-    favorites: "",
-    sid: "",
-    projectName: "",
-    status: "",
+    favorites: "all",
+    sid: "all",
+    projectName: "all",
+    status: "all",
     totalCompletes: "",
     requests: "",
     testCases: "",
@@ -293,10 +293,10 @@ export function HierarchicalProjectsTable({
       return false;
 
     const matchesFilters =
-      (filters.sid === "" || project.id === filters.sid) &&
-      (filters.projectName === "" ||
+      (filters.sid === "all" || project.id === filters.sid) &&
+      (filters.projectName === "all" ||
         project.projectName === filters.projectName) &&
-      (filters.status === "" || project.status === filters.status) &&
+      (filters.status === "all" || project.status === filters.status) &&
       (filters.totalCompletes === "" ||
         project.totalCompletes.toString().includes(filters.totalCompletes)) &&
       (filters.requests === "" ||
@@ -329,7 +329,7 @@ export function HierarchicalProjectsTable({
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         <SelectItem value="true">Favorites Only</SelectItem>
                         <SelectItem value="false">Non-Favorites</SelectItem>
                       </SelectContent>
@@ -349,7 +349,7 @@ export function HierarchicalProjectsTable({
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         {getUniqueValues("sid").map((value) => (
                           <SelectItem key={value} value={value}>
                             {value}
@@ -372,7 +372,7 @@ export function HierarchicalProjectsTable({
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         {getUniqueValues("projectName").map((value) => (
                           <SelectItem key={value} value={value}>
                             {value}
@@ -395,7 +395,7 @@ export function HierarchicalProjectsTable({
                         <SelectValue placeholder="All" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         {getUniqueValues("status").map((value) => (
                           <SelectItem
                             key={value}
