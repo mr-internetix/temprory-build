@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
-import { RequestsTable } from "../components/survey-dashboard/RequestsTable";
+import { HierarchicalProjectsTable } from "../components/survey-dashboard/HierarchicalProjectsTable";
 import { ExecutionModal } from "../components/survey-dashboard/ExecutionModal";
 import { SurveyForm } from "../components/survey-dashboard/SurveyForm";
 import { Button } from "../components/ui/button";
@@ -259,13 +259,64 @@ export default function ProjectDetails() {
         </Card>
       </div>
 
-      {/* Project Requests */}
+      {/* Project Test Cases */}
       <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50">
-          <CardTitle className="text-slate-800">Project Requests</CardTitle>
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-slate-800">
+                Project Details: {project.id}
+              </CardTitle>
+              <p className="text-sm text-slate-600 mt-1">
+                Test Cases and Request Details
+              </p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <RequestsTable onOpenExecution={handleOpenExecution} />
+        <CardContent className="p-0">
+          {/* Single project hierarchical table showing all test cases */}
+          <div className="w-full">
+            <div className="border-b border-slate-200">
+              <div className="p-4 bg-slate-50">
+                <div className="grid grid-cols-6 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-500">Project ID:</span>
+                    <p className="font-mono font-medium">{project.id}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Project Name:</span>
+                    <p className="font-medium">{project.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Status:</span>
+                    <Badge className={getStatusColor(project.status)} size="sm">
+                      {project.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Total Completes:</span>
+                    <p className="font-medium">{project.totalRequests}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Requests:</span>
+                    <p className="font-medium">
+                      {project.activeRequests} request
+                      {project.activeRequests !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Test Cases:</span>
+                    <p className="font-medium">Skipscreener, Q1None</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <HierarchicalProjectsTable
+              onOpenExecution={handleOpenExecution}
+              projectId={project.id}
+              singleProjectView={true}
+            />
+          </div>
         </CardContent>
       </Card>
 
