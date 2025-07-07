@@ -39,6 +39,17 @@ export default function RequestManagement() {
     "s25022909",
   ]);
 
+  // Listen for global new request events
+  React.useEffect(() => {
+    const handleGlobalNewRequest = () => {
+      setShowNewRequestModal(true);
+    };
+
+    window.addEventListener("openNewRequest", handleGlobalNewRequest);
+    return () =>
+      window.removeEventListener("openNewRequest", handleGlobalNewRequest);
+  }, []);
+
   // Mock projects data
   const projects = [
     {
