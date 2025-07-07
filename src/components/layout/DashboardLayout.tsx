@@ -234,7 +234,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   }
                   className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                 />
-              </div>
 
                 {/* Search Suggestions */}
                 {showSearchSuggestions && searchQuery && (
