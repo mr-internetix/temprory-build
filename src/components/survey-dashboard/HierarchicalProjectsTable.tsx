@@ -102,20 +102,17 @@ const mockProjects: Project[] = [
               {
                 qid: "Q1",
                 answers: "5 - Very Satisfied [code: 5]",
-                screenshot:
-                  "https://via.placeholder.com/800x600/4ade80/000000?text=Q1+Screenshot",
+                screenshot: "https://via.placeholder.com/800x600/4ade80/000000?text=Q1+Screenshot",
               },
               {
                 qid: "Q2",
                 answers: "Yes [code: 1]",
-                screenshot:
-                  "https://via.placeholder.com/800x600/3b82f6/ffffff?text=Q2+Screenshot",
+                screenshot: "https://via.placeholder.com/800x600/3b82f6/ffffff?text=Q2+Screenshot",
               },
               {
                 qid: "Q3",
                 answers: "User Interface [code: 2]",
-                screenshot:
-                  "https://via.placeholder.com/800x600/f59e0b/000000?text=Q3+Screenshot",
+                screenshot: "https://via.placeholder.com/800x600/f59e0b/000000?text=Q3+Screenshot",
               },
             ],
           },
@@ -177,15 +174,16 @@ export function HierarchicalProjectsTable({
   singleProjectView = false,
 }: HierarchicalProjectsTableProps) {
   const navigate = useNavigate();
-  const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
-  const [expandedTestCases, setExpandedTestCases] = useState<string[]>([]);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>(
+    singleProjectView && projectId ? [projectId] : []
+  );
+  const [expandedTestCases, setExpandedTestCases] = useState<string[]>(
+    singleProjectView ? ["tc1"] : []
+  );
   const [expandedRespondentPaths, setExpandedRespondentPaths] = useState<
     string[]
   >([]);
-  const [favorites, setFavorites] = useState<string[]>([
-    "s25021834",
-    "s25022909",
-  ]);
+  const [favorites, setFavorites] = useState<string[]>(["s25021834", "s25022909"]);
   const [screenshotModal, setScreenshotModal] = useState<{
     isOpen: boolean;
     imageUrl: string;
@@ -212,28 +210,28 @@ export function HierarchicalProjectsTable({
   const getUniqueValues = (field: keyof Project | string) => {
     const values = new Set<string>();
 
-    mockProjects.forEach((project) => {
+    mockProjects.forEach(project => {
       switch (field) {
-        case "status":
+        case 'status':
           values.add(project.status);
           break;
-        case "sid":
+        case 'sid':
           values.add(project.id);
           break;
-        case "projectName":
+        case 'projectName':
           values.add(project.projectName);
           break;
-        case "device":
-          project.testCases.forEach((tc) => values.add(tc.device));
+        case 'device':
+          project.testCases.forEach(tc => values.add(tc.device));
           break;
-        case "user":
-          project.testCases.forEach((tc) => values.add(tc.user));
+        case 'user':
+          project.testCases.forEach(tc => values.add(tc.user));
           break;
-        case "testCaseStatus":
-          project.testCases.forEach((tc) => values.add(tc.status));
+        case 'testCaseStatus':
+          project.testCases.forEach(tc => values.add(tc.status));
           break;
-        case "screenshots":
-          project.testCases.forEach((tc) => values.add(tc.screenshots));
+        case 'screenshots':
+          project.testCases.forEach(tc => values.add(tc.screenshots));
           break;
       }
     });
@@ -297,20 +295,15 @@ export function HierarchicalProjectsTable({
     if (showFavoritesOnly && !favorites.includes(project.id)) return false;
 
     // Handle favorites filter
-    if (filters.favorites === "true" && !favorites.includes(project.id))
-      return false;
-    if (filters.favorites === "false" && favorites.includes(project.id))
-      return false;
+    if (filters.favorites === "true" && !favorites.includes(project.id)) return false;
+    if (filters.favorites === "false" && favorites.includes(project.id)) return false;
 
     const matchesFilters =
       (filters.sid === "" || project.id === filters.sid) &&
-      (filters.projectName === "" ||
-        project.projectName === filters.projectName) &&
+      (filters.projectName === "" || project.projectName === filters.projectName) &&
       (filters.status === "" || project.status === filters.status) &&
-      (filters.totalCompletes === "" ||
-        project.totalCompletes.toString().includes(filters.totalCompletes)) &&
-      (filters.requests === "" ||
-        project.requests.toString().includes(filters.requests));
+      (filters.totalCompletes === "" || project.totalCompletes.toString().includes(filters.totalCompletes)) &&
+      (filters.requests === "" || project.requests.toString().includes(filters.requests));
 
     return matchesFilters;
   });
@@ -326,143 +319,125 @@ export function HierarchicalProjectsTable({
           {!singleProjectView && (
             <TableHeader>
               <TableRow className="bg-slate-50">
-                <TableHead className="w-12">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Favorites</span>
-                    <Select
-                      value={filters.favorites}
-                      onValueChange={(value) =>
-                        handleFilterChange("favorites", value)
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="All" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All</SelectItem>
-                        <SelectItem value="true">Favorites Only</SelectItem>
-                        <SelectItem value="false">Non-Favorites</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableHead>
-                <TableHead className="w-32">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">SID</span>
-                    <Select
-                      value={filters.sid}
-                      onValueChange={(value) =>
-                        handleFilterChange("sid", value)
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="All" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All</SelectItem>
-                        {getUniqueValues("sid").map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableHead>
-                <TableHead>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Project Name</span>
-                    <Select
-                      value={filters.projectName}
-                      onValueChange={(value) =>
-                        handleFilterChange("projectName", value)
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="All" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All</SelectItem>
-                        {getUniqueValues("projectName").map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableHead>
-                <TableHead className="w-24">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Status</span>
-                    <Select
-                      value={filters.status}
-                      onValueChange={(value) =>
-                        handleFilterChange("status", value)
-                      }
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="All" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">All</SelectItem>
-                        {getUniqueValues("status").map((value) => (
-                          <SelectItem
-                            key={value}
-                            value={value}
-                            className="capitalize"
-                          >
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </TableHead>
-                <TableHead className="w-32">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Total Completes</span>
-                    <Input
-                      placeholder="Filter..."
-                      value={filters.totalCompletes}
-                      onChange={(e) =>
-                        handleFilterChange("totalCompletes", e.target.value)
-                      }
-                      className="h-7 text-xs"
-                    />
-                  </div>
-                </TableHead>
-                <TableHead className="w-24">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Requests</span>
-                    <Input
-                      placeholder="Filter..."
-                      value={filters.requests}
-                      onChange={(e) =>
-                        handleFilterChange("requests", e.target.value)
-                      }
-                      className="h-7 text-xs"
-                    />
-                  </div>
-                </TableHead>
-                <TableHead>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium">Test Cases</span>
-                    <Input
-                      placeholder="Filter..."
-                      value={filters.testCases}
-                      onChange={(e) =>
-                        handleFilterChange("testCases", e.target.value)
-                      }
-                      className="h-7 text-xs"
-                    />
-                  </div>
-                </TableHead>
-                <TableHead className="w-20">
-                  <span className="text-xs font-medium">Actions</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+              <TableHead className="w-12">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Favorites</span>
+                  <Select
+                    value={filters.favorites}
+                    onValueChange={(value) => handleFilterChange("favorites", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="true">Favorites Only</SelectItem>
+                      <SelectItem value="false">Non-Favorites</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableHead>
+              <TableHead className="w-32">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">SID</span>
+                  <Select
+                    value={filters.sid}
+                    onValueChange={(value) => handleFilterChange("sid", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All</SelectItem>
+                      {getUniqueValues('sid').map(value => (
+                        <SelectItem key={value} value={value}>{value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableHead>
+              <TableHead>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Project Name</span>
+                  <Select
+                    value={filters.projectName}
+                    onValueChange={(value) => handleFilterChange("projectName", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All</SelectItem>
+                      {getUniqueValues('projectName').map(value => (
+                        <SelectItem key={value} value={value}>{value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableHead>
+              <TableHead className="w-24">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Status</span>
+                  <Select
+                    value={filters.status}
+                    onValueChange={(value) => handleFilterChange("status", value)}
+                  >
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue placeholder="All" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All</SelectItem>
+                      {getUniqueValues('status').map(value => (
+                        <SelectItem key={value} value={value} className="capitalize">{value}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TableHead>
+              <TableHead className="w-32">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Total Completes</span>
+                  <Input
+                    placeholder="Filter..."
+                    value={filters.totalCompletes}
+                    onChange={(e) =>
+                      handleFilterChange("totalCompletes", e.target.value)
+                    }
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </TableHead>
+              <TableHead className="w-24">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Requests</span>
+                  <Input
+                    placeholder="Filter..."
+                    value={filters.requests}
+                    onChange={(e) =>
+                      handleFilterChange("requests", e.target.value)
+                    }
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </TableHead>
+              <TableHead>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">Test Cases</span>
+                  <Input
+                    placeholder="Filter..."
+                    value={filters.testCases}
+                    onChange={(e) =>
+                      handleFilterChange("testCases", e.target.value)
+                    }
+                    className="h-7 text-xs"
+                  />
+                </div>
+              </TableHead>
+              <TableHead className="w-20">
+                <span className="text-xs font-medium">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
           )}
           <TableBody>
             {filteredProjects.map((project) => (
@@ -470,149 +445,176 @@ export function HierarchicalProjectsTable({
                 {/* Project Row - only show if not single project view */}
                 {!singleProjectView && (
                   <TableRow className="hover:bg-slate-50">
-                    <TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(project.id)}
+                      className={`p-1 ${
+                        favorites.includes(project.id)
+                          ? "text-yellow-500"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      <Icon
+                        icon={
+                          favorites.includes(project.id)
+                            ? "heroicons:star-solid"
+                            : "heroicons:star"
+                        }
+                        className="w-4 h-4"
+                      />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => toggleFavorite(project.id)}
-                        className={`p-1 ${
-                          favorites.includes(project.id)
-                            ? "text-yellow-500"
-                            : "text-slate-400"
-                        }`}
+                        onClick={() => toggleProject(project.id)}
+                        className="p-1"
                       >
                         <Icon
                           icon={
-                            favorites.includes(project.id)
-                              ? "heroicons:star-solid"
-                              : "heroicons:star"
+                            expandedProjects.includes(project.id)
+                              ? "heroicons:chevron-down"
+                              : "heroicons:chevron-right"
                           }
                           className="w-4 h-4"
                         />
                       </Button>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleProject(project.id)}
-                          className="p-1"
-                        >
+                      <button
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                      >
+                        {project.id}
+                      </button>
+                    </div>
+                  </TableCell>
+                  <TableCell
+                    className="font-medium cursor-pointer hover:text-emerald-600"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
+                    {project.projectName}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(project.status)}>
+                      {project.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{project.totalCompletes}</TableCell>
+                  <TableCell>
+                    {project.requests} request
+                    {project.requests !== 1 ? "s" : ""}
+                  </TableCell>
+                  <TableCell>Skipscreener, Others</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
                           <Icon
-                            icon={
-                              expandedProjects.includes(project.id)
-                                ? "heroicons:chevron-down"
-                                : "heroicons:chevron-right"
-                            }
+                            icon="heroicons:ellipsis-horizontal"
                             className="w-4 h-4"
                           />
                         </Button>
-                        <button
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
                           onClick={() => navigate(`/projects/${project.id}`)}
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                         >
-                          {project.id}
-                        </button>
-                      </div>
-                    </TableCell>
-                    <TableCell
-                      className="font-medium cursor-pointer hover:text-emerald-600"
-                      onClick={() => navigate(`/projects/${project.id}`)}
-                    >
-                      {project.projectName}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(project.status)}>
-                        {project.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{project.totalCompletes}</TableCell>
-                    <TableCell>
-                      {project.requests} request
-                      {project.requests !== 1 ? "s" : ""}
-                    </TableCell>
-                    <TableCell>Skipscreener, Others</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <Icon
-                              icon="heroicons:ellipsis-horizontal"
-                              className="w-4 h-4"
-                            />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => navigate(`/projects/${project.id}`)}
-                          >
-                            <Icon
-                              icon="heroicons:eye"
-                              className="w-4 h-4 mr-2"
-                            />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Icon
-                              icon="heroicons:pencil"
-                              className="w-4 h-4 mr-2"
-                            />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Icon
-                              icon="heroicons:document-duplicate"
-                              className="w-4 h-4 mr-2"
-                            />
-                            Duplicate
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                          <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Icon
+                            icon="heroicons:pencil"
+                            className="w-4 h-4 mr-2"
+                          />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Icon
+                            icon="heroicons:document-duplicate"
+                            className="w-4 h-4 mr-2"
+                          />
+                          Duplicate
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
                 )}
 
                 {/* Test Cases (when project is expanded or in single project view) */}
                 {(expandedProjects.includes(project.id) || singleProjectView) &&
                   project.testCases.map((testCase) => (
                     <React.Fragment key={testCase.id}>
-                      <TableRow className="bg-blue-50/30">
-                        <TableCell></TableCell>
-                        <TableCell colSpan={8}>
-                          <div className="ml-6 bg-white rounded border border-slate-200">
-                            <Table>
+                      {/* Test Cases Header Row for single project view */}
+                      {singleProjectView && (
+                        <TableRow className="bg-blue-50/30">
+                          <TableCell colSpan={8} className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleTestCase(testCase.id)}
+                                className="p-1"
+                              >
+                                <Icon
+                                  icon={
+                                    expandedTestCases.includes(testCase.id)
+                                      ? "heroicons:chevron-down"
+                                      : "heroicons:chevron-right"
+                                  }
+                                  className="w-4 h-4"
+                                />
+                              </Button>
+                              <span className="font-medium text-blue-800">Test Cases</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+
+                      {/* Test Case Details Table */}
+                      {!singleProjectView && (
+                        <TableRow className="bg-blue-50/30">
+                          <TableCell></TableCell>
+                          <TableCell colSpan={8}>
+                      )}
+
+                      {(singleProjectView || !singleProjectView) && (
+                        <div className={singleProjectView ? "" : "ml-6 bg-white rounded border border-slate-200"}>
+                          <Table>
+                            {!singleProjectView && (
                               <TableHeader>
                                 <TableRow className="bg-slate-100">
-                                  <TableHead className="text-xs">
-                                    Time Stamp
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    User
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Completes
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Device
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Screenshots
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Status
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Test Case
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Request ID
-                                  </TableHead>
-                                  <TableHead className="text-xs">
-                                    Actions
-                                  </TableHead>
+                                  <TableHead className="text-xs">Time Stamp</TableHead>
+                                  <TableHead className="text-xs">User</TableHead>
+                                  <TableHead className="text-xs">Completes</TableHead>
+                                  <TableHead className="text-xs">Device</TableHead>
+                                  <TableHead className="text-xs">Screenshots</TableHead>
+                                  <TableHead className="text-xs">Status</TableHead>
+                                  <TableHead className="text-xs">Test Case</TableHead>
+                                  <TableHead className="text-xs">Request ID</TableHead>
+                                  <TableHead className="text-xs">Actions</TableHead>
                                 </TableRow>
                               </TableHeader>
+                            )}
+                            {singleProjectView && (
+                              <TableHeader>
+                                <TableRow className="bg-slate-100">
+                                  <TableHead className="text-xs">Time Stamp</TableHead>
+                                  <TableHead className="text-xs">User</TableHead>
+                                  <TableHead className="text-xs">Completes</TableHead>
+                                  <TableHead className="text-xs">Device</TableHead>
+                                  <TableHead className="text-xs">Screenshots</TableHead>
+                                  <TableHead className="text-xs">Status</TableHead>
+                                  <TableHead className="text-xs">Test Case</TableHead>
+                                  <TableHead className="text-xs">Request ID</TableHead>
+                                  <TableHead className="text-xs">Actions</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                            )}
                               <TableBody>
                                 <TableRow className="hover:bg-slate-50">
                                   <TableCell className="text-xs">
@@ -844,22 +846,14 @@ export function HierarchicalProjectsTable({
                                                                   <TableCell className="text-xs">
                                                                     <div
                                                                       className="cursor-pointer hover:opacity-75 transition-opacity"
-                                                                      onClick={() =>
-                                                                        setScreenshotModal(
-                                                                          {
-                                                                            isOpen:
-                                                                              true,
-                                                                            imageUrl:
-                                                                              testPath.screenshot,
-                                                                            title: `${testPath.qid} Screenshot`,
-                                                                          },
-                                                                        )
-                                                                      }
+                                                                      onClick={() => setScreenshotModal({
+                                                                        isOpen: true,
+                                                                        imageUrl: testPath.screenshot,
+                                                                        title: `${testPath.qid} Screenshot`
+                                                                      })}
                                                                     >
                                                                       <img
-                                                                        src={
-                                                                          testPath.screenshot
-                                                                        }
+                                                                        src={testPath.screenshot}
                                                                         alt={`${testPath.qid} Screenshot`}
                                                                         className="w-16 h-12 object-cover rounded border border-slate-200"
                                                                       />
@@ -897,9 +891,7 @@ export function HierarchicalProjectsTable({
       {/* Screenshot Modal */}
       <Dialog
         open={screenshotModal.isOpen}
-        onOpenChange={(open) =>
-          setScreenshotModal((prev) => ({ ...prev, isOpen: open }))
-        }
+        onOpenChange={(open) => setScreenshotModal(prev => ({ ...prev, isOpen: open }))}
       >
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
