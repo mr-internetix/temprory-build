@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
+import { HierarchicalProjectsTable } from "../components/survey-dashboard/HierarchicalProjectsTable";
 import { ExecutionModal } from "../components/survey-dashboard/ExecutionModal";
 import { SurveyForm } from "../components/survey-dashboard/SurveyForm";
 import { Button } from "../components/ui/button";
@@ -351,202 +352,18 @@ export default function RequestManagement() {
         </div>
       </div>
 
-      {/* Projects Grid/List */}
-      {viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => navigate(`/projects/${project.id}`)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-lg group-hover:text-emerald-600 transition-colors">
-                        {project.name}
-                      </CardTitle>
-                      <Badge
-                        className={`${getStatusColor(project.status)} text-xs`}
-                      >
-                        {project.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-slate-600 font-mono">
-                      {project.id}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(project.id);
-                    }}
-                    className={`text-yellow-500 hover:text-yellow-600 ${
-                      favorites.includes(project.id)
-                        ? "text-yellow-500"
-                        : "text-slate-400"
-                    }`}
-                  >
-                    <Icon
-                      icon={
-                        favorites.includes(project.id)
-                          ? "heroicons:star-solid"
-                          : "heroicons:star"
-                      }
-                      className="w-4 h-4"
-                    />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                  {project.description}
-                </p>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Progress</span>
-                    <span className="font-medium">{project.progress}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${getProgressColor(project.progress)}`}
-                      style={{ width: `${project.progress}%` }}
-                    ></div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-slate-500">Requests</p>
-                      <p className="font-medium">{project.requests}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Test Cases</p>
-                      <p className="font-medium">{project.testCases}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                    <span>{project.lastActivity}</span>
-                    <span>{project.owner}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="border-slate-200 shadow-sm">
-          <CardContent className="p-0">
-            <div className="divide-y divide-slate-100">
-              {filteredProjects.map((project) => (
-                <div
-                  key={project.id}
-                  className="p-6 hover:bg-slate-50 cursor-pointer transition-colors"
-                  onClick={() => navigate(`/projects/${project.id}`)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-slate-800 truncate">
-                          {project.name}
-                        </h3>
-                        <Badge
-                          className={`${getStatusColor(project.status)} text-xs`}
-                        >
-                          {project.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(project.id);
-                          }}
-                          className={`text-yellow-500 hover:text-yellow-600 ${
-                            favorites.includes(project.id)
-                              ? "text-yellow-500"
-                              : "text-slate-400"
-                          }`}
-                        >
-                          <Icon
-                            icon={
-                              favorites.includes(project.id)
-                                ? "heroicons:star-solid"
-                                : "heroicons:star"
-                            }
-                            className="w-4 h-4"
-                          />
-                        </Button>
-                      </div>
-                      <p className="text-sm text-slate-600 mb-2">
-                        {project.description}
-                      </p>
-                      <div className="flex items-center gap-6 text-sm text-slate-500">
-                        <span className="font-mono">{project.id}</span>
-                        <span>{project.requests} requests</span>
-                        <span>{project.testCases} test cases</span>
-                        <span>Progress: {project.progress}%</span>
-                        <span>{project.lastActivity}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 bg-slate-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${getProgressColor(project.progress)}`}
-                          style={{ width: `${project.progress}%` }}
-                        ></div>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Icon
-                              icon="heroicons:ellipsis-horizontal"
-                              className="w-4 h-4"
-                            />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => navigate(`/projects/${project.id}`)}
-                          >
-                            <Icon
-                              icon="heroicons:eye"
-                              className="w-4 h-4 mr-2"
-                            />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Icon
-                              icon="heroicons:pencil"
-                              className="w-4 h-4 mr-2"
-                            />
-                            Edit Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Icon
-                              icon="heroicons:document-duplicate"
-                              className="w-4 h-4 mr-2"
-                            />
-                            Duplicate Project
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Hierarchical Projects Table */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+          <CardTitle className="text-slate-800">sid1 Dashboard</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <HierarchicalProjectsTable
+            onOpenExecution={handleOpenExecution}
+            showFavoritesOnly={filterTab === "favorites"}
+          />
+        </CardContent>
+      </Card>
 
       {/* Empty State */}
       {filteredProjects.length === 0 && (
