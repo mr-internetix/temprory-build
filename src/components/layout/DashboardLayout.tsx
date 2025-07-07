@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -10,6 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
 import { Icon } from "@iconify/react";
 import { NotificationsPopup } from "../notifications/NotificationsPopup";
 
@@ -19,8 +27,11 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [navDropdownOpen, setNavDropdownOpen] = useState(false);
 
   const navItems = [
     {
@@ -67,6 +78,70 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const breadcrumbs = getBreadcrumbs();
 
+  // Sample data for search suggestions
+  const getProjectSuggestions = (query: string) => {
+    const projects = [
+      { name: "E-commerce Platform", sid: "s25021874" },
+      { name: "CRM System", sid: "s25000213" },
+      { name: "HR Portal", sid: "s25022909" },
+      { name: "Inventory Management", sid: "s25010456" },
+      { name: "Customer Support Portal", sid: "s25011789" },
+      { name: "Analytics Dashboard", sid: "s25012234" },
+    ];
+
+    return projects
+      .filter(
+        (project) =>
+          project.name.toLowerCase().includes(query.toLowerCase()) ||
+          project.sid.toLowerCase().includes(query.toLowerCase()),
+      )
+      .slice(0, 5);
+  };
+
+  const getRequestSuggestions = (query: string) => {
+    const requests = [
+      {
+        id: "1fbe8d61-C4bb-43da-8b85-044eb5e1bc32",
+        testCase: "Test Case Name",
+      },
+      { id: "30bf238a-Eb8a-4ed6-924d-435b75e0bd93", testCase: "Skipscreener" },
+      { id: "72fc065f-Fc45-48fd-9590-Bd8508dc2a2d", testCase: "Q1None" },
+      { id: "5948ada0-87b5-415a-98bc-C3284072ce67", testCase: "Q1AllQ2None" },
+      {
+        id: "0e6aca6f-Befa-450b-86c7-3418ef85dd1f",
+        testCase: "BrandAwareness",
+      },
+    ];
+
+    return requests
+      .filter(
+        (request) =>
+          request.id.toLowerCase().includes(query.toLowerCase()) ||
+          request.testCase.toLowerCase().includes(query.toLowerCase()),
+      )
+      .slice(0, 5);
+  };
+
+  const getTestCaseSuggestions = (query: string) => {
+    const testCases = [
+      { name: "Test Case Name", project: "E-commerce Platform" },
+      { name: "Skipscreener", project: "CRM System" },
+      { name: "Q1None", project: "HR Portal" },
+      { name: "Q1AllQ2None", project: "HR Portal" },
+      { name: "BrandAwareness", project: "HR Portal" },
+      { name: "CustomerSatisfaction", project: "HR Portal" },
+      { name: "ProductFeedback", project: "HR Portal" },
+    ];
+
+    return testCases
+      .filter(
+        (testCase) =>
+          testCase.name.toLowerCase().includes(query.toLowerCase()) ||
+          testCase.project.toLowerCase().includes(query.toLowerCase()),
+      )
+      .slice(0, 5);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Navigation Header */}
@@ -87,28 +162,55 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </h1>
               </div>
 
-              {/* Navigation Links */}
-              <div className="ml-10 flex space-x-8">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors ${
-                      item.active
-                        ? "text-emerald-600 border-b-2 border-emerald-500"
-                        : "text-slate-600 hover:text-slate-800 hover:border-b-2 hover:border-slate-300"
-                    }`}
-                  >
-                    <Icon icon={item.icon} className="w-4 h-4 mr-2" />
-                    {item.label}
-                  </Link>
-                ))}
+              {/* Navigation Dropdown */}
+              <div className="ml-10">
+                <DropdownMenu
+                  open={navDropdownOpen}
+                  onOpenChange={setNavDropdownOpen}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 hover:bg-slate-50 px-3 py-2"
+                    >
+                      <Icon icon="heroicons:bars-3" className="w-5 h-5" />
+                      <span className="font-medium">Navigation</span>
+                      <Icon icon="heroicons:chevron-down" className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="start">
+                    {navItems.map((item) => (
+                      <DropdownMenuItem
+                        key={item.href}
+                        asChild
+                        className={
+                          item.active ? "bg-emerald-50 text-emerald-700" : ""
+                        }
+                      >
+                        <Link
+                          to={item.href}
+                          className="flex items-center w-full"
+                          onClick={() => setNavDropdownOpen(false)}
+                        >
+                          <Icon icon={item.icon} className="w-4 h-4 mr-3" />
+                          {item.label}
+                          {item.active && (
+                            <Icon
+                              icon="heroicons:check"
+                              className="w-4 h-4 ml-auto text-emerald-600"
+                            />
+                          )}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
-            {/* Search Bar */}
+            {/* Search Bar with Suggestions */}
             <div className="flex-1 flex justify-center px-6 lg:ml-6 lg:justify-end">
-              <div className="max-w-lg w-full lg:max-w-xs">
+              <div className="max-w-lg w-full lg:max-w-xs relative">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Icon
@@ -120,10 +222,114 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     type="text"
                     placeholder="Search projects..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSearchSuggestions(e.target.value.length > 0);
+                    }}
+                    onFocus={() =>
+                      setShowSearchSuggestions(searchQuery.length > 0)
+                    }
+                    onBlur={() =>
+                      setTimeout(() => setShowSearchSuggestions(false), 200)
+                    }
                     className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md leading-5 bg-white placeholder-slate-500 focus:outline-none focus:placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                   />
                 </div>
+
+                {/* Search Suggestions */}
+                {showSearchSuggestions && searchQuery && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-md shadow-lg">
+                    <Command>
+                      <CommandList className="max-h-64">
+                        <CommandEmpty>No results found.</CommandEmpty>
+                        <CommandGroup heading="Projects">
+                          {getProjectSuggestions(searchQuery).map(
+                            (project, index) => (
+                              <CommandItem
+                                key={`project-${index}`}
+                                onSelect={() => {
+                                  setSearchQuery(project.name);
+                                  setShowSearchSuggestions(false);
+                                  navigate("/requests");
+                                }}
+                                className="flex items-center space-x-3 cursor-pointer"
+                              >
+                                <Icon
+                                  icon="heroicons:folder"
+                                  className="w-4 h-4 text-slate-400"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {project.name}
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    {project.sid}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            ),
+                          )}
+                        </CommandGroup>
+                        <CommandGroup heading="Requests">
+                          {getRequestSuggestions(searchQuery).map(
+                            (request, index) => (
+                              <CommandItem
+                                key={`request-${index}`}
+                                onSelect={() => {
+                                  setSearchQuery(request.id);
+                                  setShowSearchSuggestions(false);
+                                  navigate("/requests");
+                                }}
+                                className="flex items-center space-x-3 cursor-pointer"
+                              >
+                                <Icon
+                                  icon="heroicons:document-text"
+                                  className="w-4 h-4 text-slate-400"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {request.id}
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    {request.testCase}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            ),
+                          )}
+                        </CommandGroup>
+                        <CommandGroup heading="Test Cases">
+                          {getTestCaseSuggestions(searchQuery).map(
+                            (testCase, index) => (
+                              <CommandItem
+                                key={`testcase-${index}`}
+                                onSelect={() => {
+                                  setSearchQuery(testCase.name);
+                                  setShowSearchSuggestions(false);
+                                  navigate("/requests");
+                                }}
+                                className="flex items-center space-x-3 cursor-pointer"
+                              >
+                                <Icon
+                                  icon="heroicons:beaker"
+                                  className="w-4 h-4 text-slate-400"
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {testCase.name}
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    {testCase.project}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            ),
+                          )}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </div>
+                )}
               </div>
             </div>
 
