@@ -335,18 +335,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Right side */}
             <div className="flex items-center space-x-4">
-              {/* Global New Request Button */}
-              <Button
-                onClick={() => {
-                  // This could be enhanced to open a modal or navigate to new request page
-                  const event = new CustomEvent("openNewRequest");
-                  window.dispatchEvent(event);
-                }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm font-medium"
-              >
-                <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
-                New Request
-              </Button>
               {/* Notifications */}
               <div className="relative">
                 <Button
@@ -401,7 +389,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                           Serial: 1234, 2345, 3456
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          📅 May 15, 2023 - 10:23 AM
+                          ��� May 15, 2023 - 10:23 AM
                         </p>
                       </div>
 
