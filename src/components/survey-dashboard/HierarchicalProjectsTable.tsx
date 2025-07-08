@@ -1021,6 +1021,15 @@ export function HierarchicalProjectsTable({
           </div>
         </div>
       )}
+
+      {/* Test Case Modal */}
+      <TestCaseModal
+        isOpen={testCaseModal.isOpen}
+        onClose={closeTestCaseModal}
+        mode={testCaseModal.mode}
+        testCaseData={testCaseModal.testCaseData}
+        onSave={handleTestCaseSave}
+      />
     </div>
   );
 }
