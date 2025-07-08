@@ -106,11 +106,53 @@ export function TestCaseModal({
   };
 
   const availableQids = [
-    { id: "QID2", name: "Brand Awareness" },
-    { id: "QID4", name: "Feature Importance" },
-    { id: "QID5", name: "Purchase Intent" },
-    { id: "QID6", name: "Price Sensitivity" },
-    { id: "QID8", name: "Net Promoter Score" },
+    {
+      id: "QID2",
+      name: "Brand Awareness",
+      type: "checkbox",
+      question: "Which brands are you aware of?",
+      options: ["Apple", "Samsung", "Google", "Xiaomi"],
+    },
+    {
+      id: "QID4",
+      name: "Feature Importance",
+      type: "ranking",
+      question: "Rank the importance of these features (1-5):",
+      options: ["Camera Quality", "Battery Life", "Price"],
+    },
+    {
+      id: "QID5",
+      name: "Purchase Intent",
+      type: "radio",
+      question: "How likely are you to purchase this product?",
+      options: [
+        "Very Likely",
+        "Somewhat Likely",
+        "Neutral",
+        "Somewhat Unlikely",
+        "Very Unlikely",
+      ],
+    },
+    {
+      id: "QID6",
+      name: "Price Sensitivity",
+      type: "radio",
+      question: "What price range would you consider reasonable?",
+      options: [
+        "Under $500",
+        "$500-$800",
+        "$801-$1000",
+        "$1001-$1500",
+        "Over $1500",
+      ],
+    },
+    {
+      id: "QID8",
+      name: "Net Promoter Score",
+      type: "radio",
+      question: "How likely are you to recommend our product?",
+      options: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    },
   ];
 
   const modalTitle = mode === "edit" ? "Edit Test Case" : "Duplicate Test Case";
