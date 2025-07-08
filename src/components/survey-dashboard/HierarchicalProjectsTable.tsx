@@ -695,7 +695,7 @@ export function HierarchicalProjectsTable({
                                         navigator.clipboard.writeText(
                                           testCase.requestId,
                                         );
-                                        // You could add a toast notification here
+                                        showToast("Request ID copied");
                                       }}
                                       className="p-1 h-auto hover:bg-slate-100"
                                       title="Copy Request ID"
