@@ -74,6 +74,8 @@ export function TestCaseModal({
   const [showEditQidModal, setShowEditQidModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedQid, setSelectedQid] = useState("");
+  const [selectedQidOptions, setSelectedQidOptions] = useState<any>({});
+  const [assignmentOption, setAssignmentOption] = useState("");
   const [editingQid, setEditingQid] = useState<any>(null);
   const [qidToDelete, setQidToDelete] = useState<any>(null);
 
