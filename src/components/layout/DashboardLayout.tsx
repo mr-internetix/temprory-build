@@ -276,10 +276,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             ),
                           )}
                         </CommandGroup>
-                        <CommandGroup
-                          heading="📄 Requests"
-                          className="bg-green-50 text-green-800 font-bold"
-                        >
+                        <CommandGroup heading="Requests">
                           {getRequestSuggestions(searchQuery).map(
                             (request, index) => (
                               <CommandItem
@@ -289,17 +286,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                   setShowSearchSuggestions(false);
                                   navigate("/requests");
                                 }}
-                                className="flex items-center space-x-4 cursor-pointer hover:bg-green-100 p-3 rounded-lg transition-colors"
+                                className="flex items-center space-x-3 cursor-pointer hover:bg-slate-50 p-2"
                               >
                                 <Icon
                                   icon="heroicons:document-text"
-                                  className="w-5 h-5 text-green-600"
+                                  className="w-4 h-4 text-slate-400"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="font-semibold text-green-800">
+                                  <span className="font-medium text-slate-900">
                                     {request.id}
                                   </span>
-                                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                  <span className="text-xs text-slate-500">
                                     {request.testCase}
                                   </span>
                                 </div>
@@ -307,10 +304,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             ),
                           )}
                         </CommandGroup>
-                        <CommandGroup
-                          heading="🧪 Test Cases"
-                          className="bg-yellow-50 text-yellow-800 font-bold"
-                        >
+                        <CommandGroup heading="Test Cases">
                           {getTestCaseSuggestions(searchQuery).map(
                             (testCase, index) => (
                               <CommandItem
@@ -320,17 +314,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                   setShowSearchSuggestions(false);
                                   navigate("/requests");
                                 }}
-                                className="flex items-center space-x-4 cursor-pointer hover:bg-yellow-100 p-3 rounded-lg transition-colors"
+                                className="flex items-center space-x-3 cursor-pointer hover:bg-slate-50 p-2"
                               >
                                 <Icon
                                   icon="heroicons:beaker"
-                                  className="w-5 h-5 text-yellow-600"
+                                  className="w-4 h-4 text-slate-400"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="font-semibold text-yellow-800">
+                                  <span className="font-medium text-slate-900">
                                     {testCase.name}
                                   </span>
-                                  <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                                  <span className="text-xs text-slate-500">
                                     {testCase.project}
                                   </span>
                                 </div>
