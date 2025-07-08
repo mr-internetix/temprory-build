@@ -165,7 +165,7 @@ export default function RespondentDetails() {
                     🏷️ Question ID
                   </TableHead>
                   <TableHead className="text-sm font-bold text-green-800 py-4">
-                    💬 Response
+                    �� Response
                   </TableHead>
                   <TableHead className="text-sm font-bold text-yellow-800 py-4 text-center">
                     📸 Screenshot
@@ -228,8 +228,17 @@ export default function RespondentDetails() {
           </div>
 
           {filteredData.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No results found for "{searchTerm}"
+            <div className="text-center py-12 bg-gradient-to-r from-red-50 to-yellow-50">
+              <Icon
+                icon="heroicons:magnifying-glass-minus"
+                className="w-16 h-16 text-red-400 mx-auto mb-4"
+              />
+              <div className="text-xl font-bold text-red-600 mb-2">
+                🔍 No results found
+              </div>
+              <div className="text-gray-600">
+                No responses match "{searchTerm}"
+              </div>
             </div>
           )}
         </div>
