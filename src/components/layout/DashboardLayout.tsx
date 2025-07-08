@@ -385,7 +385,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                           Test case name: corQID
                         </p>
                         <p className="text-sm text-slate-600 self-start">
-                          <p>Serial: 1234, 2345, 3456</p>
+                          Serial: 1234, 2345, 3456
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           ��� May 15, 2023 - 10:23 AM
