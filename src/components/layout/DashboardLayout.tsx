@@ -242,11 +242,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 {/* Search Suggestions */}
                 {showSearchSuggestions && searchQuery && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-md shadow-lg">
+                  <div className="absolute top-full left-0 right-0 z-50 mt-2 bg-white border-2 border-blue-200 rounded-xl shadow-2xl">
                     <Command>
-                      <CommandList className="max-h-64">
-                        <CommandEmpty>No results found.</CommandEmpty>
-                        <CommandGroup heading="Projects">
+                      <CommandList className="max-h-80">
+                        <CommandEmpty className="text-center py-6 text-gray-500">
+                          🔍 No results found.
+                        </CommandEmpty>
+                        <CommandGroup
+                          heading="📁 Projects"
+                          className="bg-blue-50 text-blue-800 font-bold"
+                        >
                           {getProjectSuggestions(searchQuery).map(
                             (project, index) => (
                               <CommandItem
@@ -256,17 +261,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                   setShowSearchSuggestions(false);
                                   navigate("/requests");
                                 }}
-                                className="flex items-center space-x-3 cursor-pointer"
+                                className="flex items-center space-x-4 cursor-pointer hover:bg-blue-100 p-3 rounded-lg transition-colors"
                               >
                                 <Icon
                                   icon="heroicons:folder"
-                                  className="w-4 h-4 text-slate-400"
+                                  className="w-5 h-5 text-blue-600"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="font-medium">
+                                  <span className="font-semibold text-blue-800">
                                     {project.name}
                                   </span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
                                     {project.sid}
                                   </span>
                                 </div>
