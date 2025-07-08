@@ -740,8 +740,8 @@ export function HierarchicalProjectsTable({
                                       title="Copy Request ID"
                                     >
                                       <Icon
-                                        icon="heroicons:clipboard"
-                                        className="w-3 h-3 text-slate-500 hover:text-slate-700"
+                                        icon="heroicons:clipboard-document"
+                                        className="w-3 h-3 text-blue-600 hover:text-blue-800"
                                       />
                                     </Button>
                                   </TableCell>
