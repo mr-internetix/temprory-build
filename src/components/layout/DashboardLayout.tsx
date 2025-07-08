@@ -392,35 +392,41 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         </p>
                       </div>
 
-                      <div className="p-3 border-l-4 border-red-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
+                      <div className="p-3 border-l-4 border-red-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
                         <h4 className="font-medium text-slate-800">
                           Request Failed for SID 9876543
                         </h4>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           Test case name: cor_screener
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           Serial: 5678, 6789
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p
+                          className="text-xs text-slate-500"
+                          style={{ margin: "4px auto 0 0" }}
+                        >
                           📅 May 14, 2023 - 03:45 PM
                         </p>
                       </div>
 
-                      <div className="p-3 border-l-4 border-blue-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
+                      <div className="p-3 border-l-4 border-blue-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
                         <h4 className="font-medium text-slate-800">
                           Request Archived for SID 5432109
                         </h4>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           Test case name: cor testing
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           Serial: 7890, 8901
                         </p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           by Crystel Yu (SQA)
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p
+                          className="text-xs text-slate-500"
+                          style={{ margin: "4px auto 0 0" }}
+                        >
                           📅 May 13, 2023 - 09:12 AM
                         </p>
                       </div>
