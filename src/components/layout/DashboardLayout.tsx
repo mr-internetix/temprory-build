@@ -164,7 +164,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
 
               {/* Navigation Dropdown */}
-              <div className="ml-10">
+              <div className="ml-12">
                 <DropdownMenu
                   open={navDropdownOpen}
                   onOpenChange={setNavDropdownOpen}
@@ -172,33 +172,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 hover:bg-slate-50 px-3 py-2"
+                      className="flex items-center space-x-3 bg-gradient-to-r from-blue-100 to-green-100 hover:from-blue-200 hover:to-green-200 text-blue-800 font-semibold px-4 py-2 rounded-lg shadow-md transition-all"
                     >
                       <Icon icon="heroicons:bars-3" className="w-5 h-5" />
-                      <span className="font-medium">Navigation</span>
+                      <span className="font-bold">🧭 Navigation</span>
                       <Icon icon="heroicons:chevron-down" className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="start">
+                  <DropdownMenuContent
+                    className="w-64 bg-white border-2 border-blue-200 rounded-xl shadow-xl"
+                    align="start"
+                  >
                     {navItems.map((item) => (
                       <DropdownMenuItem
                         key={item.href}
                         asChild
                         className={
-                          item.active ? "bg-emerald-50 text-emerald-700" : ""
+                          item.active
+                            ? "bg-gradient-to-r from-green-100 to-yellow-100 text-green-800 border-l-4 border-green-500"
+                            : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50"
                         }
                       >
                         <Link
                           to={item.href}
-                          className="flex items-center w-full"
+                          className="flex items-center w-full py-3 px-4"
                           onClick={() => setNavDropdownOpen(false)}
                         >
-                          <Icon icon={item.icon} className="w-4 h-4 mr-3" />
-                          {item.label}
+                          <Icon icon={item.icon} className="w-5 h-5 mr-4" />
+                          <span className="font-medium">{item.label}</span>
                           {item.active && (
                             <Icon
                               icon="heroicons:check"
-                              className="w-4 h-4 ml-auto text-emerald-600"
+                              className="w-5 h-5 ml-auto text-green-600"
                             />
                           )}
                         </Link>
