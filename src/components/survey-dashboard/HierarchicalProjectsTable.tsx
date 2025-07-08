@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Icon } from "@iconify/react";
+import { TestCaseModal } from "./TestCaseModal";
 
 interface Project {
   id: string;
