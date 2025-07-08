@@ -119,38 +119,38 @@ export default function RespondentDetails() {
         </header>
 
         {/* Main Content */}
-        <div className="bg-white rounded-xl shadow-lg border-t-4 border-green-500 overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
           {/* Controls */}
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 border-b">
+          <div className="bg-slate-50 p-6 border-b border-slate-200">
             <div className="flex justify-between items-center">
               <div className="flex gap-3">
                 <div className="relative">
                   <Input
-                    placeholder="🔍 Search responses..."
+                    placeholder="Search responses..."
                     value={searchTerm}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-4 pr-12 text-sm w-80 border-blue-200 focus:border-blue-500 rounded-lg"
+                    className="pl-10 pr-4 text-sm w-80 border-slate-300 focus:border-blue-500 rounded-md"
                   />
                   <Icon
                     icon="heroicons:magnifying-glass"
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-500 w-4 h-4"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4"
                   />
                 </div>
                 <Button
                   onClick={handleDownload}
-                  className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow-md transition-all"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow-sm"
                   size="sm"
                 >
                   <Icon
                     icon="heroicons:arrow-down-tray"
                     className="w-4 h-4 mr-2"
                   />
-                  📥 Download CSV
+                  Download CSV
                 </Button>
               </div>
-              <div className="bg-white px-4 py-2 rounded-lg shadow-sm border">
-                <span className="text-sm font-medium text-gray-600">
-                  📈 {filteredData.length} responses
+              <div className="bg-white px-3 py-2 rounded-md border border-slate-200">
+                <span className="text-sm font-medium text-slate-600">
+                  {filteredData.length} responses
                 </span>
               </div>
             </div>
@@ -168,7 +168,7 @@ export default function RespondentDetails() {
                     💬 Response
                   </TableHead>
                   <TableHead className="text-sm font-bold text-yellow-800 py-4 text-center">
-                    📸 Screenshot
+                    �� Screenshot
                   </TableHead>
                 </TableRow>
               </TableHeader>
