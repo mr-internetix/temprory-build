@@ -215,17 +215,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             {/* Center - Search Bar */}
-            <div className="flex-1 max-w-md mx-6">
+            <div className="flex-1 max-w-lg mx-8">
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Icon
                     icon="heroicons:magnifying-glass"
-                    className="h-5 w-5 text-slate-400"
+                    className="h-5 w-5 text-blue-500"
                   />
                 </div>
                 <Input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="🔍 Search projects, requests, test cases..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -237,7 +237,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   onBlur={() =>
                     setTimeout(() => setShowSearchSuggestions(false), 200)
                   }
-                  className="w-full pl-10 pr-3 py-2 border border-slate-300 rounded-md bg-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                  className="w-full pl-12 pr-4 py-3 border-2 border-blue-200 rounded-xl bg-gradient-to-r from-blue-50 to-green-50 placeholder-blue-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm font-medium shadow-inner"
                 />
 
                 {/* Search Suggestions */}
