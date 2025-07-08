@@ -335,6 +335,34 @@ export function HierarchicalProjectsTable({
     }, 3000);
   };
 
+  const openTestCaseModal = (mode: "edit" | "duplicate", testCase: any) => {
+    setTestCaseModal({
+      isOpen: true,
+      mode,
+      testCaseData: {
+        id: testCase.id,
+        name: testCase.name,
+        requestId: testCase.requestId,
+        completes: parseInt(testCase.completes.split("/")[1]) || 5,
+        device: testCase.device,
+        screenshots: testCase.screenshots,
+      },
+    });
+  };
+
+  const closeTestCaseModal = () => {
+    setTestCaseModal({
+      isOpen: false,
+      mode: "edit",
+      testCaseData: null,
+    });
+  };
+
+  const handleTestCaseSave = (data: any) => {
+    const actionText = testCaseModal.mode === "edit" ? "updated" : "duplicated";
+    showToast(`Test case ${actionText} successfully!`);
+  };
+
   return (
     <div className="w-full">
       <div className="border border-slate-200 rounded-lg overflow-hidden">
