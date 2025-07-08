@@ -889,6 +889,11 @@ export function HierarchicalProjectsTable({
                                                                 size="sm"
                                                                 variant="outline"
                                                                 className="text-xs"
+                                                                onClick={() =>
+                                                                  navigate(
+                                                                    `/projects/${project.id}/respondent/${path.serial}`,
+                                                                  )
+                                                                }
                                                               >
                                                                 Open
                                                               </Button>
