@@ -88,28 +88,28 @@ export default function RespondentDetails() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="bg-slate-50 min-h-screen p-6">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <header className="mb-8">
-          <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-6">
+          <div className="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate(-1)}
-                className="p-3 hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-lg"
+                className="p-2 hover:bg-slate-100"
               >
                 <Icon icon="heroicons:arrow-left" className="w-5 h-5" />
               </Button>
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-blue-800 mb-2">
-                  📊 Respondent Details
+                <h1 className="text-2xl font-bold text-slate-800 mb-2">
+                  Respondent Details
                 </h1>
                 <div className="flex gap-4 text-sm">
-                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md font-medium">
                     SID: {projectId || "S2501234"}
                   </span>
-                  <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">
+                  <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-md font-medium">
                     Serial: {serial || "RS-12345"}
                   </span>
                 </div>
@@ -165,7 +165,7 @@ export default function RespondentDetails() {
                     🏷️ Question ID
                   </TableHead>
                   <TableHead className="text-sm font-bold text-green-800 py-4">
-                    �� Response
+                    💬 Response
                   </TableHead>
                   <TableHead className="text-sm font-bold text-yellow-800 py-4 text-center">
                     📸 Screenshot
