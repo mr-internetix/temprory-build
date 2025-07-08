@@ -379,17 +379,24 @@ export function TestCaseModal({
 
       {/* Add QID Modal */}
       <Dialog open={showAddQidModal} onOpenChange={setShowAddQidModal}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add QID to Test Case</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select QID
               </label>
-              <Select value={selectedQid} onValueChange={setSelectedQid}>
-                <SelectTrigger>
+              <Select
+                value={selectedQid}
+                onValueChange={(value) => {
+                  setSelectedQid(value);
+                  setSelectedQidOptions({});
+                  setAssignmentOption("");
+                }}
+              >
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a QID" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,34 +408,227 @@ export function TestCaseModal({
                 </SelectContent>
               </Select>
             </div>
+
+            {selectedQid &&
+              (() => {
+                const qidData = availableQids.find((q) => q.id === selectedQid);
+                if (!qidData) return null;
+
+                return (
+                  <div className="space-y-4">
+                    {/* Question display */}
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        {qidData.question}
+                      </p>
+                    </div>
+
+                    {/* Different UI based on question type */}
+                    {qidData.type === "checkbox" && (
+                      <div className="space-y-3">
+                        {qidData.options.map((option) => (
+                          <div key={option} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`${selectedQid}-${option}`}
+                              checked={selectedQidOptions[option] || false}
+                              onChange={(e) =>
+                                setSelectedQidOptions((prev) => ({
+                                  ...prev,
+                                  [option]: e.target.checked,
+                                }))
+                              }
+                              className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                            />
+                            <label
+                              htmlFor={`${selectedQid}-${option}`}
+                              className="ml-3 block text-sm text-gray-700"
+                            >
+                              {option}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {qidData.type === "radio" && (
+                      <div className="space-y-3">
+                        {qidData.options.map((option) => (
+                          <div key={option} className="flex items-center">
+                            <input
+                              type="radio"
+                              id={`${selectedQid}-${option}`}
+                              name={`${selectedQid}-options`}
+                              value={option}
+                              checked={selectedQidOptions.selected === option}
+                              onChange={(e) =>
+                                setSelectedQidOptions({
+                                  selected: e.target.value,
+                                })
+                              }
+                              className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                            />
+                            <label
+                              htmlFor={`${selectedQid}-${option}`}
+                              className="ml-3 block text-sm text-gray-700"
+                            >
+                              {option}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {qidData.type === "ranking" && (
+                      <div className="space-y-4">
+                        {qidData.options.map((option) => (
+                          <div key={option} className="flex items-center gap-4">
+                            <Select
+                              value={selectedQidOptions[option] || ""}
+                              onValueChange={(value) =>
+                                setSelectedQidOptions((prev) => ({
+                                  ...prev,
+                                  [option]: value,
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Select importance" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="1">
+                                  1 - Not Important
+                                </SelectItem>
+                                <SelectItem value="2">
+                                  2 - Slightly Important
+                                </SelectItem>
+                                <SelectItem value="3">
+                                  3 - Moderately Important
+                                </SelectItem>
+                                <SelectItem value="4">4 - Important</SelectItem>
+                                <SelectItem value="5">
+                                  5 - Very Important
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm font-medium min-w-fit">
+                              {option}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Assignment Options */}
+                    <div className="border-t pt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        Assignment Options:
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="assign-selected"
+                            name="assignment"
+                            value="assign"
+                            checked={assignmentOption === "assign"}
+                            onChange={(e) =>
+                              setAssignmentOption(e.target.value)
+                            }
+                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                          />
+                          <label
+                            htmlFor="assign-selected"
+                            className="ml-3 block text-sm text-gray-700"
+                          >
+                            Assign on Selected
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            id="do-not-assign"
+                            name="assignment"
+                            value="do-not-assign"
+                            checked={assignmentOption === "do-not-assign"}
+                            onChange={(e) =>
+                              setAssignmentOption(e.target.value)
+                            }
+                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                          />
+                          <label
+                            htmlFor="do-not-assign"
+                            className="ml-3 block text-sm text-gray-700"
+                          >
+                            Do not assign on selected
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
             <div className="flex justify-end space-x-3">
               <Button
                 variant="outline"
-                onClick={() => setShowAddQidModal(false)}
+                onClick={() => {
+                  setShowAddQidModal(false);
+                  setSelectedQid("");
+                  setSelectedQidOptions({});
+                  setAssignmentOption("");
+                }}
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => {
-                  if (selectedQid) {
+                  if (selectedQid && assignmentOption) {
                     const qidData = availableQids.find(
                       (q) => q.id === selectedQid,
                     );
                     if (qidData) {
+                      let hint = "";
+                      if (qidData.type === "checkbox") {
+                        const selected = Object.keys(selectedQidOptions).filter(
+                          (key) => selectedQidOptions[key],
+                        );
+                        hint =
+                          selected.length > 0
+                            ? `Select "${selected.join(", ")}"`
+                            : "No options selected";
+                      } else if (qidData.type === "radio") {
+                        hint = selectedQidOptions.selected
+                          ? `Select "${selectedQidOptions.selected}"`
+                          : "No option selected";
+                      } else if (qidData.type === "ranking") {
+                        const rankings = Object.entries(
+                          selectedQidOptions,
+                        ).filter(([_, value]) => value);
+                        hint =
+                          rankings.length > 0
+                            ? `Rankings: ${rankings.map(([key, value]) => `${key}(${value})`).join(", ")}`
+                            : "No rankings set";
+                      }
+                      hint += ` (${assignmentOption === "assign" ? "Assign on Selected" : "Do not assign on selected"})`;
+
                       setQids([
                         ...qids,
                         {
                           id: qidData.id,
                           name: qidData.name,
-                          hint: `Configure ${qidData.name}`,
+                          hint: hint,
                         },
                       ]);
                     }
                     setSelectedQid("");
+                    setSelectedQidOptions({});
+                    setAssignmentOption("");
                     setShowAddQidModal(false);
                   }
                 }}
-                disabled={!selectedQid}
+                disabled={!selectedQid || !assignmentOption}
+                className="bg-emerald-600 hover:bg-emerald-700"
               >
                 Add QID
               </Button>
