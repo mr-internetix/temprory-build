@@ -143,28 +143,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-500 via-green-500 to-yellow-500">
+      <nav className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-18">
+          <div className="flex items-center justify-between h-16">
             {/* Left side - Logo and Navigation */}
             <div className="flex items-center flex-shrink-0">
               {/* Logo */}
               <div className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-green-600 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
                   <Icon
                     icon="heroicons:chart-bar"
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                   />
                 </div>
-                <h1 className="ml-4 text-2xl font-bold bg-gradient-to-r from-blue-700 via-green-700 to-yellow-700 bg-clip-text text-transparent">
-                  📊 iDataGenerator
+                <h1 className="ml-3 text-xl font-semibold text-slate-800">
+                  iDataGenerator
                 </h1>
               </div>
 
               {/* Navigation Dropdown */}
-              <div className="ml-12">
+              <div className="ml-10">
                 <DropdownMenu
                   open={navDropdownOpen}
                   onOpenChange={setNavDropdownOpen}
@@ -172,15 +172,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="flex items-center space-x-3 bg-gradient-to-r from-blue-100 to-green-100 hover:from-blue-200 hover:to-green-200 text-blue-800 font-semibold px-4 py-2 rounded-lg shadow-md transition-all"
+                      className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 px-3 py-2 font-medium"
                     >
                       <Icon icon="heroicons:bars-3" className="w-5 h-5" />
-                      <span className="font-bold">🧭 Navigation</span>
+                      <span>Navigation</span>
                       <Icon icon="heroicons:chevron-down" className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    className="w-64 bg-white border-2 border-blue-200 rounded-xl shadow-xl"
+                    className="w-56 bg-white border border-slate-200 rounded-lg shadow-lg"
                     align="start"
                   >
                     {navItems.map((item) => (
@@ -189,21 +189,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         asChild
                         className={
                           item.active
-                            ? "bg-gradient-to-r from-green-100 to-yellow-100 text-green-800 border-l-4 border-green-500"
-                            : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-green-50"
+                            ? "bg-blue-50 text-blue-700 border-l-3 border-blue-500"
+                            : "hover:bg-slate-50"
                         }
                       >
                         <Link
                           to={item.href}
-                          className="flex items-center w-full py-3 px-4"
+                          className="flex items-center w-full py-2 px-3"
                           onClick={() => setNavDropdownOpen(false)}
                         >
-                          <Icon icon={item.icon} className="w-5 h-5 mr-4" />
+                          <Icon icon={item.icon} className="w-4 h-4 mr-3" />
                           <span className="font-medium">{item.label}</span>
                           {item.active && (
                             <Icon
                               icon="heroicons:check"
-                              className="w-5 h-5 ml-auto text-green-600"
+                              className="w-4 h-4 ml-auto text-blue-600"
                             />
                           )}
                         </Link>
