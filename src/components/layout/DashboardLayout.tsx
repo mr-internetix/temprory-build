@@ -377,15 +377,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                      <div className="p-3 border-l-4 border-emerald-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
+                      <div className="p-3 border-l-4 border-emerald-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
                         <h4 className="font-medium text-slate-800">
                           Request Completed for SID 8765432
                         </h4>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-slate-600 mr-auto">
                           Test case name: corQID
                         </p>
-                        <p className="text-sm text-slate-600">
-                          Serial: 1234, 2345, 3456
+                        <p className="text-sm text-slate-600 self-start">
+                          <p>Serial: 1234, 2345, 3456</p>
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           ��� May 15, 2023 - 10:23 AM
