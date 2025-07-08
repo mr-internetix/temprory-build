@@ -842,27 +842,48 @@ export function HierarchicalProjectsTable({
                                                     </Badge>
                                                   </TableCell>
                                                   <TableCell>
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      onClick={() =>
-                                                        toggleRespondentPath(
-                                                          path.id,
-                                                        )
-                                                      }
-                                                      className="p-1"
-                                                    >
-                                                      <Icon
-                                                        icon={
-                                                          expandedRespondentPaths.includes(
+                                                    <div className="flex items-center gap-2">
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                          toggleRespondentPath(
                                                             path.id,
                                                           )
-                                                            ? "heroicons:chevron-down"
-                                                            : "heroicons:chevron-right"
                                                         }
-                                                        className="w-3 h-3"
-                                                      />
-                                                    </Button>
+                                                        className="p-1"
+                                                      >
+                                                        <Icon
+                                                          icon={
+                                                            expandedRespondentPaths.includes(
+                                                              path.id,
+                                                            )
+                                                              ? "heroicons:chevron-down"
+                                                              : "heroicons:chevron-right"
+                                                          }
+                                                          className="w-3 h-3"
+                                                        />
+                                                      </Button>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                          navigator.clipboard.writeText(
+                                                            `PATH-${testCase.requestId}-${path.serial}`,
+                                                          );
+                                                          showToast(
+                                                            "Path request ID copied",
+                                                          );
+                                                        }}
+                                                        className="p-1 h-auto hover:bg-blue-100 text-blue-600"
+                                                        title="Copy Path Request ID"
+                                                      >
+                                                        <Icon
+                                                          icon="heroicons:clipboard"
+                                                          className="w-3 h-3"
+                                                        />
+                                                      </Button>
+                                                    </div>
                                                   </TableCell>
                                                 </TableRow>
 
