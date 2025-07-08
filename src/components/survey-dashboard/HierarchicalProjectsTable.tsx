@@ -317,6 +317,13 @@ export function HierarchicalProjectsTable({
     setFilters((prev) => ({ ...prev, [column]: value }));
   };
 
+  const showToast = (message: string) => {
+    setToast({ isVisible: true, message });
+    setTimeout(() => {
+      setToast({ isVisible: false, message: "" });
+    }, 3000);
+  };
+
   return (
     <div className="w-full">
       <div className="border border-slate-200 rounded-lg overflow-hidden">
