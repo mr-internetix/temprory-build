@@ -196,6 +196,16 @@ export function HierarchicalProjectsTable({
     message: "",
   });
 
+  const [testCaseModal, setTestCaseModal] = useState<{
+    isOpen: boolean;
+    mode: "edit" | "duplicate";
+    testCaseData: any;
+  }>({
+    isOpen: false,
+    mode: "edit",
+    testCaseData: null,
+  });
+
   // Column filters
   const [filters, setFilters] = useState({
     favorites: "all",
