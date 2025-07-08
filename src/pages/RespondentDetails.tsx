@@ -145,7 +145,7 @@ export default function RespondentDetails() {
                     icon="heroicons:arrow-down-tray"
                     className="w-4 h-4 mr-2"
                   />
-                  ���� Download CSV
+                  📥 Download CSV
                 </Button>
               </div>
               <div className="bg-white px-4 py-2 rounded-lg shadow-sm border">
@@ -157,48 +157,67 @@ export default function RespondentDetails() {
           </div>
 
           {/* Table */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-indigo-100">
-                  <TableHead className="text-xs font-semibold text-indigo-800">
-                    QID
+                <TableRow className="bg-gradient-to-r from-blue-100 to-green-100 border-b-2 border-blue-200">
+                  <TableHead className="text-sm font-bold text-blue-800 py-4">
+                    🏷️ Question ID
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-indigo-800">
-                    Answers
+                  <TableHead className="text-sm font-bold text-green-800 py-4">
+                    💬 Response
                   </TableHead>
-                  <TableHead className="text-xs font-semibold text-indigo-800">
-                    Screenshot
+                  <TableHead className="text-sm font-bold text-yellow-800 py-4 text-center">
+                    📸 Screenshot
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.map((item, index) => (
-                  <TableRow key={index} className="border-b border-gray-200">
-                    <TableCell className="text-xs text-gray-700 align-top">
-                      <div>
-                        <div className="font-medium">{item.qid}</div>
-                        <div className="text-gray-500 mt-1">
+                  <TableRow
+                    key={index}
+                    className={`border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-25 hover:to-green-25 transition-colors ${
+                      index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                    }`}
+                  >
+                    <TableCell className="text-sm text-gray-700 align-top py-6">
+                      <div className="space-y-2">
+                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-center inline-block">
+                          {item.qid}
+                        </div>
+                        <div className="text-gray-600 text-sm font-medium leading-relaxed">
                           {item.question}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-xs text-gray-700 align-top">
-                      {item.answer}
+                    <TableCell className="text-sm text-gray-700 align-top py-6">
+                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
+                        {item.answer}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-xs align-top">
-                      <div className="w-16 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
+                    <TableCell className="text-sm align-top py-6">
+                      <div className="flex justify-center">
                         {item.screenshot ? (
-                          <img
-                            src={item.screenshot}
-                            alt={`${item.qid} Screenshot`}
-                            className="w-full h-full object-cover rounded"
-                          />
+                          <div
+                            className="w-20 h-16 bg-yellow-100 rounded-lg border-2 border-yellow-300 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105"
+                            onClick={() =>
+                              window.open(item.screenshot, "_blank")
+                            }
+                            title="Click to zoom in new tab"
+                          >
+                            <img
+                              src={item.screenshot}
+                              alt={`${item.qid} Screenshot`}
+                              className="w-full h-full object-cover rounded-md"
+                            />
+                          </div>
                         ) : (
-                          <Icon
-                            icon="heroicons:photo"
-                            className="text-gray-400 text-xl"
-                          />
+                          <div className="w-20 h-16 bg-red-100 border-2 border-red-300 rounded-lg flex items-center justify-center">
+                            <Icon
+                              icon="heroicons:photo"
+                              className="text-red-400 text-2xl"
+                            />
+                          </div>
                         )}
                       </div>
                     </TableCell>
