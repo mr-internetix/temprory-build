@@ -365,6 +365,104 @@ export function HierarchicalProjectsTable({
 
   return (
     <div className="w-full">
+      {/* Advanced Filters */}
+      {!singleProjectView && (
+        <div className="bg-slate-50 border-b border-slate-200 p-4">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <Icon
+                icon="heroicons:funnel"
+                className="w-4 h-4 text-slate-500"
+              />
+              <span className="text-sm font-medium text-slate-700">
+                Filters:
+              </span>
+            </div>
+
+            <div className="flex gap-3">
+              <Select
+                value={filters.status}
+                onValueChange={(value) => handleFilterChange("status", value)}
+              >
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="complete">Complete</SelectItem>
+                  <SelectItem value="running">Running</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.sid}
+                onValueChange={(value) => handleFilterChange("sid", value)}
+              >
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="Project ID" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {getUniqueValues("sid").map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={filters.favorites}
+                onValueChange={(value) =>
+                  handleFilterChange("favorites", value)
+                }
+              >
+                <SelectTrigger className="w-28 h-8 text-xs">
+                  <SelectValue placeholder="Favorites" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="true">Favorites</SelectItem>
+                  <SelectItem value="false">Not Favorited</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Input
+                placeholder="Search projects..."
+                className="w-64 h-8 text-xs"
+                value={filters.totalCompletes}
+                onChange={(e) =>
+                  handleFilterChange("totalCompletes", e.target.value)
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setFilters({
+                    favorites: "all",
+                    sid: "all",
+                    projectName: "all",
+                    status: "all",
+                    totalCompletes: "",
+                    requests: "",
+                    testCases: "",
+                  })
+                }
+                className="h-8 px-2 text-xs"
+              >
+                <Icon icon="heroicons:x-mark" className="w-3 h-3 mr-1" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border border-slate-200 rounded-lg overflow-hidden">
         <Table>
           {!singleProjectView && (
