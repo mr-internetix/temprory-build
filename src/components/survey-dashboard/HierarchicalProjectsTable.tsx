@@ -769,14 +769,25 @@ export function HierarchicalProjectsTable({
                                           />
                                           Run
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            openTestCaseModal("edit", testCase)
+                                          }
+                                        >
                                           <Icon
                                             icon="heroicons:pencil"
                                             className="w-4 h-4 mr-2"
                                           />
                                           Edit
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            openTestCaseModal(
+                                              "duplicate",
+                                              testCase,
+                                            )
+                                          }
+                                        >
                                           <Icon
                                             icon="heroicons:document-duplicate"
                                             className="w-4 h-4 mr-2"
