@@ -639,53 +639,100 @@ export function TestCaseModal({
 
       {/* Edit QID Modal */}
       <Dialog open={showEditQidModal} onOpenChange={setShowEditQidModal}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit QID Options</DialogTitle>
           </DialogHeader>
-          {editingQid && (
-            <div className="space-y-4">
-              <div className="flex items-center mb-2">
-                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mr-3">
-                  {editingQid.id}
-                </span>
-                <span className="text-gray-800 font-medium">
-                  {editingQid.name}
-                </span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hint Text
-                </label>
-                <Input
-                  value={editingQid.hint}
-                  onChange={(e) =>
-                    setEditingQid({ ...editingQid, hint: e.target.value })
-                  }
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowEditQidModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    setQids(
-                      qids.map((q) =>
-                        q.id === editingQid.id ? editingQid : q,
-                      ),
-                    );
-                    setShowEditQidModal(false);
-                  }}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          )}
+          {editingQid &&
+            (() => {
+              // Find the original QID data to get question type and options
+              const originalQid = availableQids.find(
+                (q) => q.id === editingQid.id,
+              ) || {
+                id: editingQid.id,
+                name: editingQid.name,
+                type: "radio",
+                question: "Select the option to use for this question:",
+                options: [
+                  "Very Satisfied",
+                  "Satisfied",
+                  "Neutral",
+                  "Dissatisfied",
+                  "Very Dissatisfied",
+                ],
+              };
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center mb-4">
+                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-sm font-medium mr-3">
+                      {editingQid.id}
+                    </span>
+                    <span className="text-gray-800 font-medium">
+                      {editingQid.name}
+                    </span>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {originalQid.question}
+                    </p>
+
+                    {/* Show options based on question type */}
+                    <div className="space-y-3">
+                      {originalQid.options.map((option) => (
+                        <div key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            id={`edit-${editingQid.id}-${option}`}
+                            name={`edit-${editingQid.id}-options`}
+                            value={option}
+                            defaultChecked={editingQid.hint.includes(option)}
+                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300"
+                          />
+                          <label
+                            htmlFor={`edit-${editingQid.id}-${option}`}
+                            className="ml-3 block text-sm font-medium text-gray-700"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowEditQidModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        const selectedOption = document.querySelector(
+                          `input[name="edit-${editingQid.id}-options"]:checked`,
+                        ) as HTMLInputElement;
+                        if (selectedOption) {
+                          const updatedHint = `Select "${selectedOption.value}"`;
+                          setQids(
+                            qids.map((q) =>
+                              q.id === editingQid.id
+                                ? { ...q, hint: updatedHint }
+                                : q,
+                            ),
+                          );
+                        }
+                        setShowEditQidModal(false);
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </div>
+              );
+            })()}
         </DialogContent>
       </Dialog>
 
