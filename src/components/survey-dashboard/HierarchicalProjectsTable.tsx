@@ -952,6 +952,25 @@ export function HierarchicalProjectsTable({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Toast Notification */}
+      {toast.isVisible && (
+        <div className="fixed bottom-4 right-4 bg-green-50 border-l-4 border-green-500 p-4 rounded-md shadow-md z-50 transform transition-transform duration-300">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Icon
+                icon="heroicons:check-circle"
+                className="h-5 w-5 text-green-500"
+              />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-green-800">
+                {toast.message}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
