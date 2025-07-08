@@ -19,6 +19,10 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/requests" element={<RequestManagement />} />
         <Route path="/projects/:projectId" element={<ProjectDetails />} />
+        <Route
+          path="/projects/:projectId/respondent/:serial"
+          element={<RespondentDetails />}
+        />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/archive" element={<Archive />} />
