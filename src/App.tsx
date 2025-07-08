@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import RequestManagement from "./pages/RequestManagement";
 import ProjectDetails from "./pages/ProjectDetails";
+import RespondentDetails from "./pages/RespondentDetails";
 import Analytics from "./pages/Analytics";
 import Activity from "./pages/Activity";
 import Archive from "./pages/Archive";
