@@ -193,24 +193,35 @@ export default function RequestManagement() {
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="mb-8">
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">
-              Project Management
-            </h1>
-            <p className="mt-2 text-slate-600">
-              Manage and monitor your testing projects and requests
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0">
-            <Button
-              className="bg-emerald-600 hover:bg-emerald-700 shadow-sm"
-              onClick={() => setShowNewRequestModal(true)}
-            >
-              <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
-              New Request
-            </Button>
+      <div className="mb-10">
+        <div className="bg-white p-8 rounded-2xl shadow-xl border-l-8 border-gradient-to-b from-blue-500 via-green-500 to-yellow-500">
+          <div className="sm:flex sm:items-center sm:justify-between">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-green-600 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Icon
+                  icon="heroicons:chart-bar-square"
+                  className="w-10 h-10 text-white"
+                />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-700 via-green-700 to-yellow-700 bg-clip-text text-transparent">
+                  📊 Project Management
+                </h1>
+                <p className="mt-2 text-gray-600 text-lg">
+                  🚀 Manage and monitor your testing projects and requests with
+                  ease
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 sm:mt-0">
+              <Button
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 shadow-lg text-white font-bold px-6 py-3 rounded-xl transition-all transform hover:scale-105"
+                onClick={() => setShowNewRequestModal(true)}
+              >
+                <Icon icon="heroicons:plus" className="w-5 h-5 mr-2" />✨ New
+                Request
+              </Button>
+            </div>
           </div>
         </div>
       </div>
