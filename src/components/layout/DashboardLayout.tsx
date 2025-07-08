@@ -143,23 +143,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50">
       {/* Navigation Header */}
-      <nav className="bg-white shadow-sm border-b border-slate-200/60">
+      <nav className="bg-white shadow-lg border-b-4 border-gradient-to-r from-blue-500 via-green-500 to-yellow-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-18">
             {/* Left side - Logo and Navigation */}
             <div className="flex items-center flex-shrink-0">
               {/* Logo */}
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-green-600 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg">
                   <Icon
                     icon="heroicons:chart-bar"
-                    className="w-5 h-5 text-white"
+                    className="w-6 h-6 text-white"
                   />
                 </div>
-                <h1 className="ml-3 text-xl font-semibold text-slate-800">
-                  iDataGenerator
+                <h1 className="ml-4 text-2xl font-bold bg-gradient-to-r from-blue-700 via-green-700 to-yellow-700 bg-clip-text text-transparent">
+                  📊 iDataGenerator
                 </h1>
               </div>
 
