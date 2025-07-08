@@ -228,15 +228,15 @@ export default function RespondentDetails() {
           </div>
 
           {filteredData.length === 0 && (
-            <div className="text-center py-12 bg-gradient-to-r from-red-50 to-yellow-50">
+            <div className="text-center py-12 bg-slate-50">
               <Icon
-                icon="heroicons:magnifying-glass-minus"
-                className="w-16 h-16 text-red-400 mx-auto mb-4"
+                icon="heroicons:magnifying-glass"
+                className="w-12 h-12 text-slate-400 mx-auto mb-4"
               />
-              <div className="text-xl font-bold text-red-600 mb-2">
-                🔍 No results found
+              <div className="text-lg font-medium text-slate-600 mb-2">
+                No results found
               </div>
-              <div className="text-gray-600">
+              <div className="text-slate-500">
                 No responses match "{searchTerm}"
               </div>
             </div>
