@@ -187,6 +187,14 @@ export function HierarchicalProjectsTable({
     title: "",
   });
 
+  const [toast, setToast] = useState<{
+    isVisible: boolean;
+    message: string;
+  }>({
+    isVisible: false,
+    message: "",
+  });
+
   // Column filters
   const [filters, setFilters] = useState({
     favorites: "all",
