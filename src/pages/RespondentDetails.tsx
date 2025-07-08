@@ -160,15 +160,15 @@ export default function RespondentDetails() {
           <div className="overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gradient-to-r from-blue-100 to-green-100 border-b-2 border-blue-200">
-                  <TableHead className="text-sm font-bold text-blue-800 py-4">
-                    🏷️ Question ID
+                <TableRow className="bg-slate-100 border-b border-slate-200">
+                  <TableHead className="text-sm font-semibold text-slate-700 py-3">
+                    Question ID
                   </TableHead>
-                  <TableHead className="text-sm font-bold text-green-800 py-4">
-                    💬 Response
+                  <TableHead className="text-sm font-semibold text-slate-700 py-3">
+                    Response
                   </TableHead>
-                  <TableHead className="text-sm font-bold text-yellow-800 py-4 text-center">
-                    �� Screenshot
+                  <TableHead className="text-sm font-semibold text-slate-700 py-3 text-center">
+                    Screenshot
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -176,30 +176,30 @@ export default function RespondentDetails() {
                 {filteredData.map((item, index) => (
                   <TableRow
                     key={index}
-                    className={`border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-25 hover:to-green-25 transition-colors ${
-                      index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                    className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${
+                      index % 2 === 0 ? "bg-white" : "bg-slate-25"
                     }`}
                   >
-                    <TableCell className="text-sm text-gray-700 align-top py-6">
+                    <TableCell className="text-sm text-slate-700 align-top py-4">
                       <div className="space-y-2">
-                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-center inline-block">
+                        <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-md font-semibold inline-block">
                           {item.qid}
                         </div>
-                        <div className="text-gray-600 text-sm font-medium leading-relaxed">
+                        <div className="text-slate-600 text-sm leading-relaxed">
                           {item.question}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-700 align-top py-6">
-                      <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
+                    <TableCell className="text-sm text-slate-700 align-top py-4">
+                      <div className="bg-slate-100 text-slate-800 px-3 py-2 rounded-md font-medium">
                         {item.answer}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm align-top py-6">
+                    <TableCell className="text-sm align-top py-4">
                       <div className="flex justify-center">
                         {item.screenshot ? (
                           <div
-                            className="w-20 h-16 bg-yellow-100 rounded-lg border-2 border-yellow-300 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105"
+                            className="w-16 h-12 bg-slate-100 rounded-md border border-slate-200 cursor-pointer hover:shadow-md transition-all transform hover:scale-105"
                             onClick={() =>
                               window.open(item.screenshot, "_blank")
                             }
@@ -212,10 +212,10 @@ export default function RespondentDetails() {
                             />
                           </div>
                         ) : (
-                          <div className="w-20 h-16 bg-red-100 border-2 border-red-300 rounded-lg flex items-center justify-center">
+                          <div className="w-16 h-12 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center">
                             <Icon
                               icon="heroicons:photo"
-                              className="text-red-400 text-2xl"
+                              className="text-slate-400 text-xl"
                             />
                           </div>
                         )}
