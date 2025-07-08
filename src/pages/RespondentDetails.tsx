@@ -119,33 +119,40 @@ export default function RespondentDetails() {
         </header>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg border-t-4 border-green-500 overflow-hidden">
           {/* Controls */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex gap-2">
-              <div className="relative">
-                <Input
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-3 pr-10 text-sm w-64"
-                />
-                <Icon
-                  icon="heroicons:magnifying-glass"
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
-                />
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 border-b">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-3">
+                <div className="relative">
+                  <Input
+                    placeholder="🔍 Search responses..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-4 pr-12 text-sm w-80 border-blue-200 focus:border-blue-500 rounded-lg"
+                  />
+                  <Icon
+                    icon="heroicons:magnifying-glass"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-500 w-4 h-4"
+                  />
+                </div>
+                <Button
+                  onClick={handleDownload}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow-md transition-all"
+                  size="sm"
+                >
+                  <Icon
+                    icon="heroicons:arrow-down-tray"
+                    className="w-4 h-4 mr-2"
+                  />
+                  ���� Download CSV
+                </Button>
               </div>
-              <Button
-                onClick={handleDownload}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm"
-                size="sm"
-              >
-                <Icon
-                  icon="heroicons:arrow-down-tray"
-                  className="w-4 h-4 mr-1"
-                />
-                Download
-              </Button>
+              <div className="bg-white px-4 py-2 rounded-lg shadow-sm border">
+                <span className="text-sm font-medium text-gray-600">
+                  📈 {filteredData.length} responses
+                </span>
+              </div>
             </div>
           </div>
 
