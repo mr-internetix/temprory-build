@@ -279,7 +279,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             ),
                           )}
                         </CommandGroup>
-                        <CommandGroup heading="Requests">
+                        <CommandGroup
+                          heading="📄 Requests"
+                          className="bg-green-50 text-green-800 font-bold"
+                        >
                           {getRequestSuggestions(searchQuery).map(
                             (request, index) => (
                               <CommandItem
@@ -289,17 +292,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                   setShowSearchSuggestions(false);
                                   navigate("/requests");
                                 }}
-                                className="flex items-center space-x-3 cursor-pointer"
+                                className="flex items-center space-x-4 cursor-pointer hover:bg-green-100 p-3 rounded-lg transition-colors"
                               >
                                 <Icon
                                   icon="heroicons:document-text"
-                                  className="w-4 h-4 text-slate-400"
+                                  className="w-5 h-5 text-green-600"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="font-medium">
+                                  <span className="font-semibold text-green-800">
                                     {request.id}
                                   </span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
                                     {request.testCase}
                                   </span>
                                 </div>
@@ -307,7 +310,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             ),
                           )}
                         </CommandGroup>
-                        <CommandGroup heading="Test Cases">
+                        <CommandGroup
+                          heading="🧪 Test Cases"
+                          className="bg-yellow-50 text-yellow-800 font-bold"
+                        >
                           {getTestCaseSuggestions(searchQuery).map(
                             (testCase, index) => (
                               <CommandItem
@@ -317,17 +323,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                                   setShowSearchSuggestions(false);
                                   navigate("/requests");
                                 }}
-                                className="flex items-center space-x-3 cursor-pointer"
+                                className="flex items-center space-x-4 cursor-pointer hover:bg-yellow-100 p-3 rounded-lg transition-colors"
                               >
                                 <Icon
                                   icon="heroicons:beaker"
-                                  className="w-4 h-4 text-slate-400"
+                                  className="w-5 h-5 text-yellow-600"
                                 />
                                 <div className="flex flex-col">
-                                  <span className="font-medium">
+                                  <span className="font-semibold text-yellow-800">
                                     {testCase.name}
                                   </span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
                                     {testCase.project}
                                   </span>
                                 </div>
