@@ -171,16 +171,6 @@ export function ExecutionModal({
               Developed by : Ipsos DSC Development Team
             </div>
           </div>
-
-          {/* Annotation */}
-          <div className="absolute top-20 right-4">
-            <div className="bg-white border-2 border-green-500 rounded px-3 py-2 text-sm max-w-[200px]">
-              <div className="text-red-500 font-medium">
-                Dropdown which question to stop. Can be played and pause anytime
-                as well.
-              </div>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
