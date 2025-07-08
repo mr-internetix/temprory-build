@@ -227,11 +227,21 @@ export default function RequestManagement() {
       </div>
 
       {/* Hierarchical Projects Table */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-          <CardTitle className="text-slate-800">sid1 Dashboard</CardTitle>
+      <Card className="border-2 border-blue-200 shadow-2xl rounded-2xl overflow-hidden">
+        <CardHeader className="border-b-4 border-gradient-to-r from-green-500 to-yellow-500 bg-gradient-to-r from-blue-50 to-green-50 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Icon
+                icon="heroicons:table-cells"
+                className="w-8 h-8 text-white"
+              />
+            </div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-green-700 to-yellow-700 bg-clip-text text-transparent">
+              📋 sid1 Dashboard
+            </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 bg-gradient-to-br from-white to-blue-50">
           <HierarchicalProjectsTable
             onOpenExecution={handleOpenExecution}
             showFavoritesOnly={filterTab === "favorites"}
