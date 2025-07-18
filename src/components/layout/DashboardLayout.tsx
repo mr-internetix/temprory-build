@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useDeferredValue } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -19,19 +19,56 @@ import {
   CommandList,
 } from "../ui/command";
 import { Icon } from "@iconify/react";
-import { NotificationsPopup } from "../notifications/NotificationsPopup";
+import { useAuth } from "../../contexts/AuthContext";
+import { apiClient } from "../../lib/api";
+import { webSocketService, Notification } from "../../lib/websocket_service";
+import { ToastNotification } from "../notifications/ToastNotification";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+interface ProjectSuggestion {
+  project_id: string;
+  project_name: string;
+  project_created: string;
+}
+
+interface ProjectSuggestionsResponse {
+  suggestions: ProjectSuggestion[];
+  "total count": number;
+}
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [navDropdownOpen, setNavDropdownOpen] = useState(false);
+  const [projectSuggestions, setProjectSuggestions] = useState<ProjectSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  
+  // WebSocket notifications state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [toastNotifications, setToastNotifications] = useState<Notification[]>([]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const firstName = user.first_name || "";
+    const lastName = user.last_name || "";
+    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || user.username.charAt(0).toUpperCase();
+  };
 
   const navItems = [
     {
@@ -47,12 +84,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       active: location.pathname === "/requests",
     },
     {
-      href: "/analytics",
-      label: "Analytics",
-      icon: "heroicons:chart-pie",
-      active: location.pathname === "/analytics",
-    },
-    {
       href: "/activity",
       label: "Activity",
       icon: "heroicons:clock",
@@ -66,11 +97,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     },
   ];
 
+
+  
   const getBreadcrumbs = () => {
     const path = location.pathname;
     if (path === "/") return [];
     if (path === "/requests") return ["Request Management"];
-    if (path === "/analytics") return ["Analytics"];
     if (path === "/activity") return ["Activity"];
     if (path === "/archive") return ["Archive"];
     return [];
@@ -78,68 +110,191 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const breadcrumbs = getBreadcrumbs();
 
-  // Sample data for search suggestions
-  const getProjectSuggestions = (query: string) => {
-    const projects = [
-      { name: "E-commerce Platform", sid: "s25021874" },
-      { name: "CRM System", sid: "s25000213" },
-      { name: "HR Portal", sid: "s25022909" },
-      { name: "Inventory Management", sid: "s25010456" },
-      { name: "Customer Support Portal", sid: "s25011789" },
-      { name: "Analytics Dashboard", sid: "s25012234" },
-    ];
+  // API call to fetch project suggestions
+  const fetchProjectSuggestions = async (query: string) => {
+    if (query.length < 2) {
+      setProjectSuggestions([]);
+      return;
+    }
 
-    return projects
-      .filter(
-        (project) =>
-          project.name.toLowerCase().includes(query.toLowerCase()) ||
-          project.sid.toLowerCase().includes(query.toLowerCase()),
-      )
-      .slice(0, 5);
+    setIsLoadingSuggestions(true);
+    try {
+      const data = await apiClient.get<ProjectSuggestionsResponse>(
+        `/api/idatagenerator/projects/suggestions/?q=${encodeURIComponent(query)}&limit=5`
+      );
+      setProjectSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error('Error fetching project suggestions:', error);
+      setProjectSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
   };
 
-  const getRequestSuggestions = (query: string) => {
-    const requests = [
-      {
-        id: "1fbe8d61-C4bb-43da-8b85-044eb5e1bc32",
-        testCase: "Test Case Name",
-      },
-      { id: "30bf238a-Eb8a-4ed6-924d-435b75e0bd93", testCase: "Skipscreener" },
-      { id: "72fc065f-Fc45-48fd-9590-Bd8508dc2a2d", testCase: "Q1None" },
-      { id: "5948ada0-87b5-415a-98bc-C3284072ce67", testCase: "Q1AllQ2None" },
-      {
-        id: "0e6aca6f-Befa-450b-86c7-3418ef85dd1f",
-        testCase: "BrandAwareness",
-      },
-    ];
+  // Debounce search to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length >= 2) {
+        fetchProjectSuggestions(searchQuery);
+      } else {
+        setProjectSuggestions([]);
+      }
+    }, 300);
 
-    return requests
-      .filter(
-        (request) =>
-          request.id.toLowerCase().includes(query.toLowerCase()) ||
-          request.testCase.toLowerCase().includes(query.toLowerCase()),
-      )
-      .slice(0, 5);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
-  const getTestCaseSuggestions = (query: string) => {
-    const testCases = [
-      { name: "Test Case Name", project: "E-commerce Platform" },
-      { name: "Skipscreener", project: "CRM System" },
-      { name: "Q1None", project: "HR Portal" },
-      { name: "Q1AllQ2None", project: "HR Portal" },
-      { name: "BrandAwareness", project: "HR Portal" },
-      { name: "CustomerSatisfaction", project: "HR Portal" },
-      { name: "ProductFeedback", project: "HR Portal" },
-    ];
+  // WebSocket notifications and webhook integration
+  useEffect(() => {
+    console.log("dashboard layout triggered for user:", user);
 
-    return testCases
-      .filter(
-        (testCase) =>
-          testCase.name.toLowerCase().includes(query.toLowerCase()) ||
-          testCase.project.toLowerCase().includes(query.toLowerCase()),
-      )
-      .slice(0, 5);
+    if (user) {
+      console.log("trying to connect websocket");
+
+      // Connect to WebSocket
+      webSocketService.connect();
+
+      // Handle notifications updates
+      const handleNotificationsChange = (newNotifications: Notification[]) => {
+        console.log("Notifications Updated:", newNotifications);
+        setNotifications(newNotifications);
+      };
+
+      // Handle toast notifications - PREVENT ALL DUPLICATES
+      const handleToastNotification = (notification: Notification) => {
+        console.log("🍞 Toast notification received:", notification.id);
+        
+        // Check if this notification already exists in our toast state
+        setToastNotifications(prev => {
+          const exists = prev.find(n => n.id === notification.id);
+          if (exists) {
+            console.log("🚫 Duplicate toast notification blocked:", notification.id);
+            return prev;
+          }
+          
+          console.log("✅ Adding new toast notification:", notification.id);
+          return [...prev, notification];
+        });
+      };
+
+      // IMPORTANT: Only register ONE set of callbacks
+      webSocketService.onNotificationsChange(handleNotificationsChange);
+      webSocketService.onToastNotification(handleToastNotification);
+
+      // Initialize existing notifications
+      const existingNotifications = webSocketService.getNotifications();
+      console.log("Existing notifications:", existingNotifications);
+      setNotifications(existingNotifications);
+
+      // Cleanup on unmount
+      return () => {
+        console.log("🧹 Cleaning up WebSocket listeners");
+        webSocketService.removeNotificationsListener(handleNotificationsChange);
+        webSocketService.removeToastListener(handleToastNotification);
+      };
+    } else {
+      console.log("No user found, not connecting WebSocket");
+    }
+  }, [user]);
+
+  const handleSuggestionClick = (suggestion: ProjectSuggestion) => {
+    setSearchQuery("");
+    setShowSearchSuggestions(false);
+    // Navigate to project details page
+    navigate(`/projects/${suggestion.project_id}`);
+  };
+
+  // Remove toast notification after it's closed
+  const handleToastClose = (notificationId: string) => {
+    console.log("🗑️ Removing toast notification:", notificationId);
+    setToastNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  // Mark notification as read
+  const handleMarkAsRead = (notificationId: string) => {
+    webSocketService.markAsRead(notificationId);
+  };
+
+  // Mark all notifications as read
+  const handleMarkAllAsRead = () => {
+    webSocketService.markAllAsRead();
+  };
+
+  // Get unread notifications count
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Get notification icon based on type
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'idatagenerator_project_created':
+        return 'heroicons:folder-plus';
+      case 'idatagenerator_test_case_created':
+        return 'heroicons:document-plus';
+      case 'idatagenerator_mdd_processing_start':
+      case 'idatagenerator_test_case_processing_start':
+        return 'heroicons:play-circle';
+      case 'idatagenerator_mdd_processing_update':
+      case 'idatagenerator_data_generation_progress':
+        return 'heroicons:arrow-path';
+      case 'idatagenerator_mdd_processed':
+      case 'idatagenerator_test_case_completed':
+      case 'idatagenerator_respondent_completed':
+        return 'heroicons:check-circle';
+      case 'idatagenerator_error':
+        return 'heroicons:exclamation-triangle';
+      default:
+        return 'heroicons:bell';
+    }
+  };
+
+  // Get notification icon color
+  const getNotificationIconColor = (type: string) => {
+    switch (type) {
+      case 'idatagenerator_project_created':
+      case 'idatagenerator_mdd_processed':
+      case 'idatagenerator_test_case_completed':
+      case 'idatagenerator_respondent_completed':
+        return 'text-green-500';
+      case 'idatagenerator_test_case_created':
+      case 'idatagenerator_mdd_processing_update':
+      case 'idatagenerator_data_generation_progress':
+        return 'text-blue-500';
+      case 'idatagenerator_mdd_processing_start':
+      case 'idatagenerator_test_case_processing_start':
+        return 'text-yellow-500';
+      case 'idatagenerator_error':
+        return 'text-red-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
+
+  // Format notification time
+  const formatNotificationTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+      
+      if (diffInMinutes < 1) return "Just now";
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    } catch {
+      return "Unknown";
+    }
   };
 
   return (
@@ -175,8 +330,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       className="flex items-center space-x-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 px-3 py-2 font-medium"
                     >
                       <Icon icon="heroicons:bars-3" className="w-5 h-5" />
-                      <span>Navigation</span>
-                      <Icon icon="heroicons:chevron-down" className="w-4 h-4" />
+                      {/* <span>Navigation</span> */}
+                      {/* <Icon icon="heroicons:chevron-down" className="w-4 h-4" /> */}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -229,10 +384,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setShowSearchSuggestions(e.target.value.length > 0);
+                    setShowSearchSuggestions(e.target.value.length >= 2);
                   }}
                   onFocus={() =>
-                    setShowSearchSuggestions(searchQuery.length > 0)
+                    setShowSearchSuggestions(searchQuery.length >= 2)
                   }
                   onBlur={() =>
                     setTimeout(() => setShowSearchSuggestions(false), 200)
@@ -241,97 +396,45 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 />
 
                 {/* Search Suggestions */}
-                {showSearchSuggestions && searchQuery && (
+                {showSearchSuggestions && searchQuery.length >= 2 && (
                   <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg">
                     <Command>
                       <CommandList className="max-h-64">
-                        <CommandEmpty className="text-center py-4 text-slate-500">
-                          No results found.
-                        </CommandEmpty>
-                        <CommandGroup heading="Projects">
-                          {getProjectSuggestions(searchQuery).map(
-                            (project, index) => (
+                        {isLoadingSuggestions ? (
+                          <div className="text-center py-4">
+                            <Icon icon="heroicons:arrow-path" className="w-4 h-4 animate-spin mx-auto text-slate-400" />
+                            <p className="text-sm text-slate-500 mt-2">Searching...</p>
+                          </div>
+                        ) : projectSuggestions.length === 0 ? (
+                          <CommandEmpty className="text-center py-4 text-slate-500">
+                            No projects found.
+                          </CommandEmpty>
+                        ) : (
+                          <CommandGroup heading="Projects">
+                            {projectSuggestions.map((project) => (
                               <CommandItem
-                                key={`project-${index}`}
-                                onSelect={() => {
-                                  setSearchQuery(project.name);
-                                  setShowSearchSuggestions(false);
-                                  navigate("/requests");
-                                }}
+                                key={project.project_id}
+                                onSelect={() => handleSuggestionClick(project)}
                                 className="flex items-center space-x-3 cursor-pointer hover:bg-slate-50 p-2"
                               >
                                 <Icon
                                   icon="heroicons:folder"
                                   className="w-4 h-4 text-slate-400"
                                 />
-                                <div className="flex flex-col">
+                                <div className="flex flex-col flex-1">
                                   <span className="font-medium text-slate-900">
-                                    {project.name}
+                                    {project.project_name}
                                   </span>
-                                  <span className="text-xs text-slate-500">
-                                    {project.sid}
-                                  </span>
+                                  <div className="flex items-center space-x-2 text-xs text-slate-500">
+                                    <span>ID: {project.project_id.slice(0, 8)}...</span>
+                                    <span>•</span>
+                                    <span>Created: {formatDate(project.project_created)}</span>
+                                  </div>
                                 </div>
                               </CommandItem>
-                            ),
-                          )}
-                        </CommandGroup>
-                        <CommandGroup heading="Requests">
-                          {getRequestSuggestions(searchQuery).map(
-                            (request, index) => (
-                              <CommandItem
-                                key={`request-${index}`}
-                                onSelect={() => {
-                                  setSearchQuery(request.id);
-                                  setShowSearchSuggestions(false);
-                                  navigate("/requests");
-                                }}
-                                className="flex items-center space-x-3 cursor-pointer hover:bg-slate-50 p-2"
-                              >
-                                <Icon
-                                  icon="heroicons:document-text"
-                                  className="w-4 h-4 text-slate-400"
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-slate-900">
-                                    {request.id}
-                                  </span>
-                                  <span className="text-xs text-slate-500">
-                                    {request.testCase}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            ),
-                          )}
-                        </CommandGroup>
-                        <CommandGroup heading="Test Cases">
-                          {getTestCaseSuggestions(searchQuery).map(
-                            (testCase, index) => (
-                              <CommandItem
-                                key={`testcase-${index}`}
-                                onSelect={() => {
-                                  setSearchQuery(testCase.name);
-                                  setShowSearchSuggestions(false);
-                                  navigate("/requests");
-                                }}
-                                className="flex items-center space-x-3 cursor-pointer hover:bg-slate-50 p-2"
-                              >
-                                <Icon
-                                  icon="heroicons:beaker"
-                                  className="w-4 h-4 text-slate-400"
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium text-slate-900">
-                                    {testCase.name}
-                                  </span>
-                                  <span className="text-xs text-slate-500">
-                                    {testCase.project}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            ),
-                          )}
-                        </CommandGroup>
+                            ))}
+                          </CommandGroup>
+                        )}
                       </CommandList>
                     </Command>
                   </div>
@@ -350,13 +453,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                 >
                   <Icon icon="heroicons:bell" className="w-5 h-5" />
-                  <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-white"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-medium text-white border-2 border-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </Button>
 
                 {/* Notification Dropdown */}
                 {notificationsOpen && (
                   <div
-                    className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50"
+                    className="absolute right-0 top-full mt-2 w-96 bg-white border border-slate-200 rounded-lg shadow-lg z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="p-4 border-b border-slate-200">
@@ -375,155 +482,68 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       </div>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-sm text-slate-600">
-                          5 unread notifications
+                          {unreadCount} unread notifications
                         </span>
-                        <button className="text-blue-600 text-sm hover:text-blue-800">
+                        <button 
+                          onClick={handleMarkAllAsRead}
+                          className="text-blue-600 text-sm hover:text-blue-800"
+                        >
                           Mark all as read
                         </button>
                       </div>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto">
-                      <div className="p-3 border-l-4 border-emerald-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
-                        <h4 className="font-medium text-slate-800">
-                          Request Completed for SID 8765432
-                        </h4>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          Test case name: corQID
-                        </p>
-                        <p className="text-sm text-slate-600 self-start">
-                          Serial: 1234, 2345, 3456
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          ��� May 15, 2023 - 10:23 AM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-red-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
-                        <h4 className="font-medium text-slate-800">
-                          Request Failed for SID 9876543
-                        </h4>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          Test case name: cor_screener
-                        </p>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          Serial: 5678, 6789
-                        </p>
-                        <p
-                          className="text-xs text-slate-500"
-                          style={{ margin: "4px auto 0 0" }}
-                        >
-                          📅 May 14, 2023 - 03:45 PM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-blue-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer flex flex-col">
-                        <h4 className="font-medium text-slate-800">
-                          Request Archived for SID 5432109
-                        </h4>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          Test case name: cor testing
-                        </p>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          Serial: 7890, 8901
-                        </p>
-                        <p className="text-sm text-slate-600 mr-auto">
-                          by Crystel Yu (SQA)
-                        </p>
-                        <p
-                          className="text-xs text-slate-500"
-                          style={{ margin: "4px auto 0 0" }}
-                        >
-                          📅 May 13, 2023 - 09:12 AM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-yellow-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <h4 className="font-medium text-slate-800">
-                          Request In Progress for SID 1234567
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Test case name: Mobile Performance Test
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Serial: 9012, 3456, 7890
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          📅 May 15, 2023 - 02:30 PM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-purple-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <h4 className="font-medium text-slate-800">
-                          New Request Created for SID 2468135
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Test case name: API Security Validation
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Serial: 1357, 2468, 9024
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          by Alex Johnson (Dev)
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          📅 May 15, 2023 - 01:15 PM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-pink-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <h4 className="font-medium text-slate-800">
-                          Priority Request Updated for SID 3691472
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Test case name: User Authentication Flow
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Serial: 4567, 8901, 2345
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Priority changed to High by Maria Garcia (PM)
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          📅 May 15, 2023 - 11:45 AM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-orange-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <h4 className="font-medium text-slate-800">
-                          Test Data Generated for SID 7531598
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Test case name: Payment Gateway Integration
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          Serial: 6789, 0123, 4567
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          1,500 test records generated successfully
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          📅 May 15, 2023 - 09:30 AM
-                        </p>
-                      </div>
-
-                      <div className="p-3 border-l-4 border-gray-500 border-b border-slate-100 hover:bg-slate-50 cursor-pointer">
-                        <h4 className="font-medium text-slate-800">
-                          Maintenance Scheduled for Infrastructure
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Scheduled downtime: May 16, 2023 (2:00 AM - 4:00 AM)
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          All active requests will be paused during maintenance
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          by System Administrator
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          📅 May 14, 2023 - 05:00 PM
-                        </p>
-                      </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer ${
+                              !notification.read ? 'bg-blue-50/30' : ''
+                            }`}
+                            onClick={() => handleMarkAsRead(notification.id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0">
+                                <Icon 
+                                  icon={getNotificationIcon(notification.type)}
+                                  className={`w-5 h-5 ${getNotificationIconColor(notification.type)}`}
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-sm font-medium text-slate-900">
+                                    {notification.title}
+                                  </p>
+                                  {!notification.read && (
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-600 mb-2 leading-relaxed">
+                                  {notification.message}
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs text-slate-500">
+                                    {formatNotificationTime(notification.timestamp)}
+                                  </p>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                    notification.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                    notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {notification.priority}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center">
+                          <Icon icon="heroicons:bell-slash" className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-500 text-sm">No notifications yet</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-3 border-t border-slate-200 text-center">
@@ -546,9 +566,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     className="relative h-8 w-8 rounded-full hover:bg-slate-100"
                   >
                     <Avatar className="h-8 w-8 border border-slate-200">
-                      <AvatarImage src="/avatars/01.png" alt="User" />
+                      <AvatarImage src="/avatars/01.png" alt={user?.username || "User"} />
                       <AvatarFallback className="bg-emerald-100 text-emerald-700 text-sm font-medium">
-                        U
+                        {getUserInitials()}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -558,6 +578,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   align="end"
                   forceMount
                 >
+                  {/* Profile and Settings tabs disabled */}
+                  {/* 
                   <DropdownMenuItem asChild>
                     <Link
                       to="/profile"
@@ -580,7 +602,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-slate-200" />
-                  <DropdownMenuItem className="text-slate-700 hover:text-slate-900">
+                  */}
+                  <DropdownMenuItem 
+                    className="text-slate-700 hover:text-slate-900 cursor-pointer"
+                    onClick={handleLogout}
+                  >
                     <Icon
                       icon="heroicons:arrow-right-on-rectangle"
                       className="mr-2 h-4 w-4"
@@ -654,13 +680,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             <div className="flex space-x-6">
               <a
-                href="#"
+                href="https://ipsos-dsc.github.io/idatagenerator/"
                 className="text-sm text-slate-600 hover:text-slate-800 transition-colors"
+                target="_blank"
               >
                 Documentation
               </a>
               <a
-                href="#"
+                href="mailto:ajit.yadav2@ipsos.com"
                 className="text-sm text-slate-600 hover:text-slate-800 transition-colors"
               >
                 Support
@@ -682,6 +709,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           className="fixed inset-0 z-40"
           onClick={() => setNotificationsOpen(false)}
         />
+      )}
+
+      {/* SINGLE Toast Notifications Container - Only one in entire app */}
+      {toastNotifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-[9999] space-y-2 pointer-events-none">
+          <div className="pointer-events-auto space-y-2">
+            {toastNotifications.map((notification) => (
+              <ToastNotification
+                key={notification.id}
+                notification={notification}
+                onClose={() => handleToastClose(notification.id)}
+                duration={5000}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

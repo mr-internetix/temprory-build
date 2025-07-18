@@ -185,4 +185,5 @@ function useToast() {
   };
 }
 
-export { useToast, toast };
+// Re-export the toast hook from the UI component
+export { useToast, toast } from "@/components/ui/use-toast"

@@ -1,594 +1,605 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../components/ui/dropdown-menu";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
 import { Icon } from "@iconify/react";
-import { useNavigate } from "react-router-dom";
+import { projectApi, ArchivedProject } from "../lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-interface ArchivedProject {
-  id: string;
-  sid: string;
-  projectName: string;
-  status: string;
-  totalCompletes: number;
-  requests: number;
-  testCases: string;
-  archivedDate: string;
-}
-
-export default function Archive() {
-  const navigate = useNavigate();
+export default function ArchivePage() {
+  const [archivedProjects, setArchivedProjects] = useState<ArchivedProject[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [selectedProject, setSelectedProject] =
-    useState<ArchivedProject | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [selectedProject, setSelectedProject] = useState<ArchivedProject | null>(null);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>([]);
+  const pageSize = 20;
+  const { toast } = useToast();
 
-  // Sample archived projects data
-  const [archivedProjects, setArchivedProjects] = useState<ArchivedProject[]>([
-    {
-      id: "1",
-      sid: "SID-001",
-      projectName: "E-commerce Platform",
-      status: "Archived",
-      totalCompletes: 24,
-      requests: 32,
-      testCases: "Integration Tests, Load Testing",
-      archivedDate: "2024-01-15",
-    },
-    {
-      id: "2",
-      sid: "SID-002",
-      projectName: "CRM System",
-      status: "Archived",
-      totalCompletes: 18,
-      requests: 25,
-      testCases: "Unit Tests, Regression Testing",
-      archivedDate: "2024-01-10",
-    },
-    {
-      id: "3",
-      sid: "SID-003",
-      projectName: "HR Portal",
-      status: "Archived",
-      totalCompletes: 15,
-      requests: 20,
-      testCases: "Functional Testing, User Acceptance",
-      archivedDate: "2024-01-05",
-    },
-    {
-      id: "4",
-      sid: "SID-006",
-      projectName: "Inventory Management",
-      status: "Archived",
-      totalCompletes: 22,
-      requests: 28,
-      testCases: "API Testing, Database Testing",
-      archivedDate: "2023-12-20",
-    },
-    {
-      id: "5",
-      sid: "SID-007",
-      projectName: "Customer Support Portal",
-      status: "Archived",
-      totalCompletes: 19,
-      requests: 24,
-      testCases: "UI Testing, Performance Testing",
-      archivedDate: "2023-12-15",
-    },
-    {
-      id: "6",
-      sid: "SID-008",
-      projectName: "Analytics Dashboard",
-      status: "Archived",
-      totalCompletes: 16,
-      requests: 21,
-      testCases: "Data Validation, Report Testing",
-      archivedDate: "2023-12-10",
-    },
-  ]);
+  // Fetch archived projects
+  const fetchArchivedProjects = async (page: number = 1) => {
+    setIsLoading(true);
+    try {
+      const response = await projectApi.getArchivedProjects(page, pageSize);
+      setArchivedProjects(response.projects);
+      setCurrentPage(response.pagination.page);
+      setTotalPages(response.pagination.total_pages);
+      setTotalCount(response.pagination.total_count);
+    } catch (error) {
+      console.error("Error fetching archived projects:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load archived projects. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handleUnarchive = () => {
-    if (selectedProject) {
-      setArchivedProjects((projects) =>
-        projects.filter((project) => project.id !== selectedProject.id),
-      );
-      setShowUnarchiveModal(false);
+  useEffect(() => {
+    fetchArchivedProjects(1);
+  }, []);
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchArchivedProjects(1);
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchArchivedProjects(page);
+    }
+  };
+
+  // Handle restore project
+  const handleRestoreProject = async () => {
+    if (!selectedProject) return;
+
+    setIsRestoring(true);
+    try {
+      const response = await projectApi.restoreProject(selectedProject.id);
+      
+      toast({
+        title: "Success!",
+        description: `Project "${response.project_name}" has been restored successfully.`,
+        variant: "default",
+      });
+
+      // Remove the restored project from the list
+      setArchivedProjects(prev => prev.filter(p => p.id !== selectedProject.id));
+      setShowRestoreModal(false);
       setSelectedProject(null);
+
+      // Update total count
+      setTotalCount(prev => prev - 1);
+    } catch (error) {
+      console.error("Error restoring project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore project. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRestoring(false);
     }
   };
 
-  const openDetailsModal = (project: ArchivedProject) => {
-    setSelectedProject(project);
-    setShowDetailsModal(true);
+  // Toggle project expansion
+  const toggleProjectExpansion = (projectId: string) => {
+    setExpandedProjects(prev =>
+      prev.includes(projectId)
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId]
+    );
   };
 
-  const openUnarchiveModal = (project: ArchivedProject) => {
-    setSelectedProject(project);
-    setShowUnarchiveModal(true);
-  };
-
-  const filteredProjects = archivedProjects.filter((project) => {
-    const matchesSearch =
-      project.sid.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.testCases.toLowerCase().includes(searchTerm.toLowerCase());
-
-    if (selectedFilter === "all") return matchesSearch;
-    if (selectedFilter === "recent") {
-      const projectDate = new Date(project.archivedDate);
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      return matchesSearch && projectDate >= thirtyDaysAgo;
+  // Format date
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
     }
+  };
 
-    return matchesSearch;
+  // Filter projects based on search term
+  const filteredProjects = archivedProjects.filter(project => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      project.project_name.toLowerCase().includes(searchLower) ||
+      project.archived_by.toLowerCase().includes(searchLower) ||
+      project.case_type_display.toLowerCase().includes(searchLower) ||
+      project.region_display.toLowerCase().includes(searchLower)
+    );
   });
 
   return (
     <DashboardLayout>
-      <div className="bg-white shadow rounded-lg p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
-            Archived Projects
-          </h2>
-          <div className="flex space-x-3">
-            {/* Search */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Icon
-                  icon="heroicons:magnifying-glass"
-                  className="h-5 w-5 text-gray-400"
-                />
-              </div>
-              <Input
-                type="text"
-                placeholder="Search projects"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-3 py-2 w-64 border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {/* Filter Dropdown */}
-            <DropdownMenu open={filterOpen} onOpenChange={setFilterOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium shadow-sm flex items-center"
-                >
-                  <Icon icon="heroicons:funnel" className="h-5 w-5 mr-2" />
-                  Filter
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuItem
-                  onClick={() => setSelectedFilter("all")}
-                  className={
-                    selectedFilter === "all" ? "bg-blue-50 text-blue-700" : ""
-                  }
-                >
-                  <Icon icon="heroicons:list-bullet" className="w-4 h-4 mr-2" />
-                  All Projects
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSelectedFilter("recent")}
-                  className={
-                    selectedFilter === "recent"
-                      ? "bg-blue-50 text-blue-700"
-                      : ""
-                  }
-                >
-                  <Icon icon="heroicons:clock" className="w-4 h-4 mr-2" />
-                  Recently Archived
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Back to Dashboard */}
+      {/* Header */}
+      <div className="mb-8">
+        <div className="sm:flex sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">Archived Projects</h1>
+            <p className="mt-2 text-slate-600">
+              Manage and restore archived projects
+            </p>
+          </div>
+          <div className="mt-4 sm:mt-0">
             <Button
-              onClick={() => navigate("/")}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
+              onClick={() => window.location.href = "/"}
+              variant="outline"
+              className="border-slate-300"
             >
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Results Info */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {filteredProjects.length} of {archivedProjects.length}{" "}
-          archived projects
-          {searchTerm && ` for "${searchTerm}"`}
-          {selectedFilter !== "all" && ` (${selectedFilter})`}
-        </div>
-
-        {/* Archive Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Project Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Completes
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Requests
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Test Cases
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Archived Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((project) => (
-                  <tr
-                    key={project.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {project.sid}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.projectName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className="bg-gray-100 text-gray-800 border-gray-200">
-                        {project.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.totalCompletes}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.requests}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.testCases}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(project.archivedDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDetailsModal(project)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-2"
-                          title="View details"
-                        >
-                          <Icon icon="heroicons:eye" className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openUnarchiveModal(project)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50 p-2"
-                          title="Unarchive project"
-                        >
-                          <Icon
-                            icon="heroicons:arrow-up-tray"
-                            className="h-4 w-4"
-                          />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center">
-                      <Icon
-                        icon="heroicons:archive-box-x-mark"
-                        className="w-12 h-12 text-gray-400 mb-4"
-                      />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        No archived projects found
-                      </h3>
-                      <p className="text-gray-500 mb-4">
-                        {searchTerm
-                          ? `No projects match your search "${searchTerm}"`
-                          : "There are no archived projects yet"}
-                      </p>
-                      {searchTerm && (
-                        <Button
-                          onClick={() => setSearchTerm("")}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Clear search
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {filteredProjects.length > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6">
-            <div className="flex flex-1 justify-between sm:hidden">
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                Next
-              </Button>
+      {/* Archive Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:archive-box" className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Total Archived</p>
+                <p className="text-lg font-semibold text-gray-900">{totalCount}</p>
+              </div>
             </div>
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">1</span> to{" "}
-                  <span className="font-medium">{filteredProjects.length}</span>{" "}
-                  of{" "}
-                  <span className="font-medium">{filteredProjects.length}</span>{" "}
-                  results
+          </CardContent>
+        </Card>
+        
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:beaker" className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Total Test Cases</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {archivedProjects.reduce((sum, project) => sum + project.test_cases_count, 0)}
                 </p>
               </div>
-              <div>
-                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-l-md"
-                    disabled
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="bg-blue-50 border-blue-500 text-blue-600"
-                  >
-                    1
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-r-md"
-                    disabled
-                  >
-                    Next
-                  </Button>
-                </nav>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:check-circle" className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Completed Test Cases</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {archivedProjects.reduce((sum, project) => sum + project.completed_test_cases, 0)}
+                </p>
               </div>
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
 
-        {/* Project Details Modal */}
-        {showDetailsModal && selectedProject && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Project Details
-                  </h2>
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:document-text" className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">MDD Variables</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {archivedProjects.reduce((sum, project) => sum + (project.mdd_info?.variables_count || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search */}
+      <Card className="border-slate-200 shadow-sm mb-6">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-3">
+          <CardTitle className="text-slate-800 text-base">Search Archived Projects</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <div className="flex-1 relative">
+              <Icon
+                icon="heroicons:magnifying-glass"
+                className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <Input
+                placeholder="Search by project name, archived by, case type..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <Icon icon="heroicons:arrow-path" className="w-4 h-4 animate-spin" />
+              ) : (
+                <Icon icon="heroicons:magnifying-glass" className="w-4 h-4" />
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Archived Projects Table */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-slate-800 text-base">
+              Archived Projects
+            </CardTitle>
+            <div className="text-sm text-slate-600">
+              Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Icon icon="heroicons:arrow-path" className="w-8 h-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-500">Loading archived projects...</span>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="text-center py-12">
+              <Icon
+                icon="heroicons:archive-box"
+                className="w-12 h-12 text-gray-400 mx-auto mb-4"
+              />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No archived projects found
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm
+                  ? `No archived projects match your search "${searchTerm}"`
+                  : "No projects have been archived yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Project Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Case Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Test Cases
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      MDD Info
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Archived
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProjects.map((project) => (
+                    <React.Fragment key={project.id}>
+                      <tr className="hover:bg-gray-50">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <button
+                              onClick={() => toggleProjectExpansion(project.id)}
+                              className="mr-2 text-gray-400 hover:text-gray-600"
+                            >
+                              <Icon
+                                icon={
+                                  expandedProjects.includes(project.id)
+                                    ? "heroicons:chevron-down"
+                                    : "heroicons:chevron-right"
+                                }
+                                className="w-4 h-4"
+                              />
+                            </button>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {project.project_name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {project.region_display}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">
+                            {project.case_type_display}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center space-x-2">
+                            <span>{project.completed_test_cases}/{project.test_cases_count}</span>
+                            {project.completed_test_cases === project.test_cases_count && project.test_cases_count > 0 && (
+                              <Icon icon="heroicons:check-circle" className="w-4 h-4 text-green-500" />
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {project.mdd_info ? (
+                            <div className="text-sm">
+                              <div className="text-gray-900">{project.mdd_info.filename}</div>
+                              <div className="text-gray-500">{project.mdd_info.variables_count} variables</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No MDD</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm">
+                            <div className="text-gray-900">{formatDate(project.archived_at)}</div>
+                            <div className="text-gray-500">by {project.archived_by}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedProject(project);
+                              setShowRestoreModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 border-blue-200"
+                          >
+                            <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-1" />
+                            Restore
+                          </Button>
+                        </td>
+                      </tr>
+
+                      {/* Expanded Details */}
+                      {expandedProjects.includes(project.id) && (
+                        <tr>
+                          <td colSpan={6} className="px-0 py-0">
+                            <div className="bg-gray-50 border-t border-gray-200">
+                              <div className="p-4">
+                                <h4 className="font-medium text-gray-900 mb-3">
+                                  Project Details
+                                </h4>
+                                <div className="bg-white rounded border overflow-hidden">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Project ID
+                                      </label>
+                                      <p className="text-sm font-mono text-blue-600">
+                                        {project.id}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Created Date
+                                      </label>
+                                      <p className="text-sm text-gray-900">
+                                        {formatDate(project.created_at)}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Processing Duration
+                                      </label>
+                                      <p className="text-sm text-gray-900">
+                                        {project.processing_duration}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium text-gray-500 mb-1">
+                                        Status
+                                      </label>
+                                      <Badge className="bg-gray-100 text-gray-800 text-xs">
+                                        {project.status_display}
+                                      </Badge>
+                                    </div>
+                                    {project.mdd_info && (
+                                      <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">
+                                          MDD Status
+                                        </label>
+                                        <Badge className="bg-green-100 text-green-800 text-xs">
+                                          {project.mdd_info.status}
+                                        </Badge>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">
+                  Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} archived projects
+                </p>
+                <div className="flex gap-2">
                   <Button
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      setSelectedProject(null);
-                    }}
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="text-gray-500 hover:text-gray-700"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
                   >
-                    <Icon icon="heroicons:x-mark" className="w-5 h-5" />
+                    <Icon icon="heroicons:chevron-left" className="w-4 h-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    {totalPages > 5 && (
+                      <>
+                        <span className="px-2">...</span>
+                        <Button
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(totalPages)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <Icon icon="heroicons:chevron-right" className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Project ID
-                      </label>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {selectedProject.sid}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Project Name
-                      </label>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {selectedProject.projectName}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <Badge className="bg-gray-100 text-gray-800 border-gray-200">
-                        {selectedProject.status}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Total Completes
-                      </label>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {selectedProject.totalCompletes}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Total Requests
-                      </label>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {selectedProject.requests}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Archived Date
-                      </label>
-                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {new Date(
-                          selectedProject.archivedDate,
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Test Cases
-                  </label>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-900">
-                      {selectedProject.testCases}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Restore Confirmation Modal */}
+      <Dialog open={showRestoreModal} onOpenChange={setShowRestoreModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Restore Project</DialogTitle>
+          </DialogHeader>
+          {selectedProject && (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center">
+                  <Icon icon="heroicons:information-circle" className="w-5 h-5 text-blue-600 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900">
+                      Restore "{selectedProject.project_name}"?
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      This will move the project back to the active projects list.
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                <Button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    setSelectedProject(null);
-                  }}
-                  variant="outline"
-                >
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    openUnarchiveModal(selectedProject);
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Icon
-                    icon="heroicons:arrow-up-tray"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Unarchive Project
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Unarchive Confirmation Modal */}
-        {showUnarchiveModal && selectedProject && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    Unarchive Project
-                  </h2>
-                  <Button
-                    onClick={() => {
-                      setShowUnarchiveModal(false);
-                      setSelectedProject(null);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <Icon icon="heroicons:x-mark" className="w-5 h-5" />
-                  </Button>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Case Type:</span>
+                  <span className="text-gray-900">{selectedProject.case_type_display}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Test Cases:</span>
+                  <span className="text-gray-900">
+                    {selectedProject.completed_test_cases}/{selectedProject.test_cases_count}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Archived:</span>
+                  <span className="text-gray-900">{formatDate(selectedProject.archived_at)}</span>
                 </div>
               </div>
-              <div className="p-6">
-                <div className="flex items-center mb-4">
-                  <div className="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                    <Icon
-                      icon="heroicons:arrow-up-tray"
-                      className="w-6 h-6 text-green-600"
-                    />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Unarchive "{selectedProject.projectName}"?
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    This project will be moved back to the active projects list
-                    and will be available for normal operations.
-                  </p>
-                  <div className="bg-gray-50 p-3 rounded-lg text-left">
-                    <div className="text-xs text-gray-600 space-y-1">
-                      <div>
-                        <strong>Project ID:</strong> {selectedProject.sid}
-                      </div>
-                      <div>
-                        <strong>Total Completes:</strong>{" "}
-                        {selectedProject.totalCompletes}
-                      </div>
-                      <div>
-                        <strong>Total Requests:</strong>{" "}
-                        {selectedProject.requests}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+
+              <div className="flex justify-end space-x-3 pt-4">
                 <Button
+                  variant="outline"
                   onClick={() => {
-                    setShowUnarchiveModal(false);
+                    setShowRestoreModal(false);
                     setSelectedProject(null);
                   }}
-                  variant="outline"
+                  disabled={isRestoring}
                 >
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleUnarchive}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleRestoreProject}
+                  disabled={isRestoring}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  <Icon
-                    icon="heroicons:arrow-up-tray"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Unarchive Project
+                  {isRestoring ? (
+                    <>
+                      <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2 animate-spin" />
+                      Restoring...
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2" />
+                      Restore Project
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

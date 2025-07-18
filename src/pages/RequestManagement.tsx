@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { HierarchicalProjectsTable } from "../components/survey-dashboard/HierarchicalProjectsTable";
@@ -26,6 +26,7 @@ import {
   TabsTrigger,
 } from "../components/ui/tabs";
 import { Icon } from "@iconify/react";
+import { projectApi, ProjectHierarchy } from "../lib/api";
 
 export default function RequestManagement() {
   const navigate = useNavigate();
@@ -35,10 +36,35 @@ export default function RequestManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [filterTab, setFilterTab] = useState("all");
-  const [favorites, setFavorites] = useState<string[]>([
-    "s25021874",
-    "s25022909",
-  ]);
+  // Load favorites from localStorage
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('project-favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [projectsData, setProjectsData] = useState<ProjectHierarchy[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+
+  // Helper function to get time ago - move this before it's used
+  const getTimeAgo = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return "Just now";
+      if (diffInHours < 24) return `${diffInHours} hours ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays === 1) return "1 day ago";
+      if (diffInDays < 7) return `${diffInDays} days ago`;
+      return `${Math.floor(diffInDays / 7)} weeks ago`;
+    } catch {
+      return "Unknown";
+    }
+  };
 
   // Listen for global new request events
   React.useEffect(() => {
@@ -51,85 +77,40 @@ export default function RequestManagement() {
       window.removeEventListener("openNewRequest", handleGlobalNewRequest);
   }, []);
 
-  // Mock projects data
-  const projects = [
-    {
-      id: "s25021874",
-      name: "E-commerce Platform",
-      description:
-        "Comprehensive testing suite for e-commerce platform functionality",
-      status: "active",
-      requests: 12,
-      testCases: 24,
-      lastActivity: "2 hours ago",
-      progress: 75,
-      owner: "John Doe",
-      team: "QA Team Alpha",
-    },
-    {
-      id: "s25000213",
-      name: "CRM System",
-      description:
-        "Customer relationship management system testing and validation",
-      status: "completed",
-      requests: 8,
-      testCases: 16,
-      lastActivity: "1 day ago",
-      progress: 100,
-      owner: "Jane Smith",
-      team: "QA Team Beta",
-    },
-    {
-      id: "s25022909",
-      name: "HR Portal",
-      description:
-        "Human resources portal testing including user management and workflows",
-      status: "active",
-      requests: 15,
-      testCases: 32,
-      lastActivity: "3 hours ago",
-      progress: 60,
-      owner: "Mike Johnson",
-      team: "QA Team Alpha",
-    },
-    {
-      id: "s25010456",
-      name: "Inventory Management",
-      description:
-        "Warehouse and inventory management system comprehensive testing",
-      status: "paused",
-      requests: 6,
-      testCases: 12,
-      lastActivity: "2 days ago",
-      progress: 40,
-      owner: "Sarah Wilson",
-      team: "QA Team Gamma",
-    },
-    {
-      id: "s25011789",
-      name: "Customer Support Portal",
-      description: "Customer support and ticketing system testing suite",
-      status: "active",
-      requests: 10,
-      testCases: 20,
-      lastActivity: "5 hours ago",
-      progress: 85,
-      owner: "David Brown",
-      team: "QA Team Beta",
-    },
-    {
-      id: "s25012234",
-      name: "Analytics Dashboard",
-      description: "Business intelligence and analytics dashboard testing",
-      status: "completed",
-      requests: 4,
-      testCases: 8,
-      lastActivity: "1 week ago",
-      progress: 100,
-      owner: "Emma Davis",
-      team: "QA Team Gamma",
-    },
-  ];
+  // Fetch projects hierarchy
+  useEffect(() => {
+    const fetchProjectsHierarchy = async () => {
+      setIsLoadingProjects(true);
+      try {
+        const response = await projectApi.getProjectsHierarchy(1, 50); // Get more projects for management page
+        setProjectsData(response.projects_hierarchy);
+      } catch (error) {
+        console.error("Error fetching projects hierarchy:", error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    fetchProjectsHierarchy();
+  }, []);
+
+  // Transform API data to match expected format
+  const projects = projectsData.map((project) => ({
+    id: project.id,
+    name: project.project_name,
+    description: `${project.case_type_display} project in ${project.region_display}`,
+    status: project.status === "ready_for_test_cases" ? "active" : 
+             project.status === "completed" ? "completed" : 
+             project.status === "pending" ? "paused" : "active",
+    requests: project.test_cases_summary.total_test_cases,
+    testCases: project.test_cases_summary.total_test_cases,
+    lastActivity: getTimeAgo(project.created_at),
+    progress: project.test_cases_summary.total_test_cases > 0 
+      ? Math.round((project.test_cases_summary.completed_test_cases / project.test_cases_summary.total_test_cases) * 100)
+      : 0,
+    owner: project.created_by,
+    team: `${project.case_type_display} Team`,
+  }));
 
   const handleOpenExecution = (requestId: string) => {
     setActiveRequestId(requestId);
@@ -150,6 +131,11 @@ export default function RequestManagement() {
         : [...prev, projectId],
     );
   };
+
+  // Save favorites to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('project-favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -221,19 +207,27 @@ export default function RequestManagement() {
       <Card className="border border-slate-200 shadow-sm rounded-lg overflow-hidden">
         <CardHeader className="border-b border-slate-200 bg-slate-50 py-4">
           <CardTitle className="text-xl font-semibold text-slate-800">
-            sid1 Dashboard
+            Projects Dashboard
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 bg-white">
-          <HierarchicalProjectsTable
-            onOpenExecution={handleOpenExecution}
-            showFavoritesOnly={filterTab === "favorites"}
-          />
+          {isLoadingProjects ? (
+            <div className="flex items-center justify-center py-12">
+              <Icon icon="heroicons:arrow-path" className="w-8 h-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-500">Loading projects...</span>
+            </div>
+          ) : (
+            <HierarchicalProjectsTable
+              onOpenExecution={handleOpenExecution}
+              showFavoritesOnly={filterTab === "favorites"}
+              projectsData={projectsData}
+            />
+          )}
         </CardContent>
       </Card>
 
       {/* Empty State */}
-      {filteredProjects.length === 0 && (
+      {filteredProjects.length === 0 && !isLoadingProjects && (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="p-12 text-center">
             <Icon

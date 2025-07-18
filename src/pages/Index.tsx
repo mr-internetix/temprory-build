@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { RequestsTable } from "../components/survey-dashboard/RequestsTable";
 import { ExecutionModal } from "../components/survey-dashboard/ExecutionModal";
 import { SurveyForm } from "../components/survey-dashboard/SurveyForm";
@@ -13,19 +13,29 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Icon } from "@iconify/react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { projectApi, Activity, ProjectHierarchy } from "../lib/api";
 
 export default function Index() {
   const [showExecutionModal, setShowExecutionModal] = useState(false);
-  const [showNewRequestModal, setShowNewRequestModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false); // Single modal state
   const [activeRequestId, setActiveRequestId] = useState<string>("");
   const [projectFilter, setProjectFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedRequests, setExpandedRequests] = useState<string[]>([]);
+  const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [projectsData, setProjectsData] = useState<ProjectHierarchy[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [projectsSummary, setProjectsSummary] = useState({
+    total_projects: 0,
+    projects_with_test_cases: 0,
+    total_test_cases: 0
+  });
 
-  const handleSubmitRequest = (data: any) => {
-    console.log("Submitting request:", data);
-    setActiveRequestId("new-request-" + Date.now());
-    setShowExecutionModal(true);
+  const handleCreateSubmit = (data: any) => {
+    console.log("Creating request:", data);
+    setShowCreateModal(false);
+    // Handle the form submission here
   };
 
   const handleOpenExecution = (requestId: string) => {
@@ -53,69 +63,70 @@ export default function Index() {
     failed: 3,
   };
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: "added",
-      message: "Request added for SID12345678 Testcase",
-      time: "2 minutes ago",
-      user: "Username234",
-      sid: "s25021874",
-      action: "added",
-    },
-    {
-      id: 2,
-      type: "duplicated",
-      message: "Duplicated for Testcase1Term in SID12345699",
-      time: "10 minutes ago",
-      user: "Username124",
-      sid: "s25000213",
-      action: "duplicated",
-    },
-    {
-      id: 3,
-      type: "archived",
-      message:
-        "SID12345690 - TestCase2Screener Serial#58 moved to Archive folder",
-      time: "25 minutes ago",
-      user: "Username56",
-      sid: "s25022909",
-      action: "archived",
-    },
-    {
-      id: 4,
-      type: "renamed",
-      message: "TestcaseScreener1 renamed to NewTestcaseName123",
-      time: "30 minutes ago",
-      user: "Username852",
-      sid: "s25022909",
-      action: "renamed",
-    },
-  ];
+  // Fetch recent activities
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      setIsLoadingActivities(true);
+      try {
+        const response = await projectApi.getActivities(1, 5); // Get first 5 activities
+        setRecentActivities(response.activities);
+      } catch (error) {
+        console.error("Error fetching recent activities:", error);
+      } finally {
+        setIsLoadingActivities(false);
+      }
+    };
 
-  const handleActivityClick = (sid: string) => {
-    // Navigate to requests page and highlight the specific SID
-    window.location.href = `/requests?highlight=${sid}`;
-  };
+    fetchRecentActivities();
+  }, []);
+
+  // Fetch projects hierarchy
+  useEffect(() => {
+    const fetchProjectsHierarchy = async () => {
+      setIsLoadingProjects(true);
+      try {
+        const response = await projectApi.getProjectsHierarchy(1, 10); // Get first 10 projects
+        setProjectsData(response.projects_hierarchy);
+        setProjectsSummary(response.summary);
+      } catch (error) {
+        console.error("Error fetching projects hierarchy:", error);
+      } finally {
+        setIsLoadingProjects(false);
+      }
+    };
+
+    fetchProjectsHierarchy();
+  }, []);
 
   const getActivityColor = (type: string) => {
     const colors: Record<string, string> = {
-      added: "bg-emerald-50 text-emerald-600 border-emerald-100",
-      duplicated: "bg-blue-50 text-blue-600 border-blue-100",
-      archived: "bg-amber-50 text-amber-600 border-amber-100",
-      renamed: "bg-purple-50 text-purple-600 border-purple-100",
+      project_created: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      testcase_created: "bg-blue-50 text-blue-600 border-blue-100",
+      project_archived: "bg-amber-50 text-amber-600 border-amber-100",
+      project_updated: "bg-purple-50 text-purple-600 border-purple-100",
     };
     return colors[type] || "bg-slate-50 text-slate-600 border-slate-100";
   };
 
   const getActivityIcon = (type: string) => {
     const icons: Record<string, string> = {
-      added: "heroicons:plus",
-      duplicated: "heroicons:document-duplicate",
-      archived: "heroicons:archive-box",
-      renamed: "heroicons:pencil",
+      project_created: "heroicons:plus",
+      testcase_created: "heroicons:document-plus",
+      project_archived: "heroicons:archive-box",
+      project_updated: "heroicons:pencil",
     };
     return icons[type] || "heroicons:document-text";
+  };
+
+  const handleActivityClick = (activity: Activity) => {
+    // Navigate based on activity type
+    if (activity.project?.id) {
+      window.location.href = `/projects/${activity.project.id}`;
+    }
+  };
+
+  const handleProjectClick = (projectId: string) => {
+    window.location.href = `/projects/${projectId}`;
   };
 
   // Dashboard requests data
@@ -234,24 +245,63 @@ export default function Index() {
     );
   });
 
-  const toggleRequestExpansion = (requestId: string) => {
-    setExpandedRequests((prev) =>
-      prev.includes(requestId)
-        ? prev.filter((id) => id !== requestId)
-        : [...prev, requestId],
-    );
+  // Helper functions for projects display
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+      
+      if (diffInHours < 1) return "Just now";
+      if (diffInHours < 24) return `${diffInHours} hours ago`;
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} days ago`;
+    } catch {
+      return "Unknown";
+    }
   };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       completed: "bg-green-100 text-green-800",
-      running: "bg-blue-100 text-blue-800",
-      paused: "bg-yellow-100 text-yellow-800",
+      ready_for_test_cases: "bg-blue-100 text-blue-800",
+      pending: "bg-yellow-100 text-yellow-800",
+      processing: "bg-purple-100 text-purple-800",
       failed: "bg-red-100 text-red-800",
-      queued: "bg-gray-100 text-gray-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
+
+  const getCaseTypeColor = (caseType: number) => {
+    return caseType === 1 
+      ? "bg-purple-100 text-purple-800" 
+      : "bg-blue-100 text-blue-800";
+  };
+
+  // Filter projects based on search term
+  const filteredProjects = projectsData.filter((project) => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      project.project_name.toLowerCase().includes(searchLower) ||
+      project.created_by.toLowerCase().includes(searchLower) ||
+      project.case_type_display.toLowerCase().includes(searchLower) ||
+      project.test_cases.some(tc => tc.test_case_name.toLowerCase().includes(searchLower))
+    );
+  });
 
   return (
     <DashboardLayout>
@@ -266,7 +316,7 @@ export default function Index() {
           </div>
           <div className="mt-4 sm:mt-0">
             <Button
-              onClick={() => setShowNewRequestModal(true)}
+              onClick={() => setShowCreateModal(true)}
               className="bg-emerald-600 hover:bg-emerald-700 shadow-sm"
             >
               <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
@@ -287,7 +337,7 @@ export default function Index() {
           </CardHeader>
           <CardContent className="space-y-3 p-4">
             <Button
-              onClick={() => setShowNewRequestModal(true)}
+              onClick={() => setShowCreateModal(true)}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm h-9"
             >
               <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
@@ -312,65 +362,83 @@ export default function Index() {
                 Recent Activity
               </CardTitle>
               <span className="bg-white text-blue-600 px-2 py-1 rounded text-xs font-medium">
-                4 new
+                {recentActivities.length} new
               </span>
             </div>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="space-y-3">
-              {recentActivity.slice(0, 3).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start space-x-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
-                  onClick={() => handleActivityClick(activity.sid)}
-                >
+            {isLoadingActivities ? (
+              <div className="flex items-center justify-center py-8">
+                <Icon icon="heroicons:arrow-path" className="w-6 h-6 animate-spin text-gray-400" />
+                <span className="ml-2 text-gray-500">Loading activities...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentActivities.slice(0, 3).map((activity) => (
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center border ${getActivityColor(
-                      activity.type,
-                    )}`}
+                    key={activity.id}
+                    className="flex items-start space-x-3 cursor-pointer hover:bg-slate-50 p-2 rounded transition-colors"
+                    onClick={() => handleActivityClick(activity)}
                   >
-                    <Icon
-                      icon={getActivityIcon(activity.type)}
-                      className="w-3 h-3"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-800 font-medium leading-tight">
-                      {activity.message}
-                    </p>
-                    <div className="flex justify-between items-center mt-1">
-                      <p className="text-xs text-slate-500">{activity.time}</p>
-                      <p className="text-xs text-slate-600">{activity.user}</p>
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center border ${getActivityColor(
+                        activity.activity_type,
+                      )}`}
+                    >
+                      <Icon
+                        icon={getActivityIcon(activity.activity_type)}
+                        className="w-3 h-3"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-800 font-medium leading-tight">
+                        {activity.title}
+                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <p className="text-xs text-slate-500">{activity.time_ago}</p>
+                        <p className="text-xs text-slate-600">{activity.username}</p>
+                      </div>
+                      {activity.project && (
+                        <p className="text-xs text-slate-400 truncate mt-1">
+                          Project: {activity.project.name}
+                          {activity.project.archived && (
+                            <span className="ml-1 text-amber-600">(Archived)</span>
+                          )}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-              <button
-                onClick={() => window.open("/activity", "_blank")}
-                className="w-full text-center text-blue-600 hover:text-blue-800 text-xs py-2 border-t mt-3"
-              >
-                View all activity →
-              </button>
-            </div>
+                ))}
+                <button
+                  onClick={() => window.location.href = "/activity"}
+                  className="w-full text-center text-blue-600 hover:text-blue-800 text-xs py-2 border-t mt-3"
+                >
+                  View all activity →
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Projects & Requests Table */}
+      {/* Projects & Requests Table - Updated */}
       <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-3">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-slate-800 text-base">
-              Recent Requests
+              Recent Projects
             </CardTitle>
             <div className="flex items-center gap-4">
+              <div className="text-sm text-slate-600">
+                {projectsSummary.total_projects} projects • {projectsSummary.total_test_cases} test cases
+              </div>
               <div className="relative">
                 <Icon
                   icon="heroicons:magnifying-glass"
                   className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                 />
                 <Input
-                  placeholder="Search requests..."
+                  placeholder="Search projects..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 w-64 h-8 text-sm"
@@ -380,275 +448,127 @@ export default function Index() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                    SID
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    PROJECT/REQUEST NAME
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    TYPE
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    STATUS
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    COMPLETES
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    DEVICE
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    SCREENSHOT
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    TEST CASES
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    USER NAME
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    LAST UPDATED
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
-                    ACTIONS
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRequests.map((request) => (
-                  <React.Fragment key={request.id}>
-                    <tr className="hover:bg-gray-50 cursor-pointer">
+          {isLoadingProjects ? (
+            <div className="flex items-center justify-center py-12">
+              <Icon icon="heroicons:arrow-path" className="w-8 h-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-500">Loading projects...</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Project Name
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Case Type
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Status
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Test Cases
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Device
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      MDD Info
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Created By
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-600">
+                      Created
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProjects.map((project) => (
+                    <tr key={project.id} className="hover:bg-gray-50 cursor-pointer">
                       <td
-                        className="px-4 py-3 whitespace-nowrap font-mono text-sm font-medium"
-                        onClick={() => toggleRequestExpansion(request.id)}
+                        className="px-3 py-2"
+                        onClick={() => handleProjectClick(project.id)}
                       >
-                        <div className="flex items-center gap-2">
-                          <Icon
-                            icon={
-                              expandedRequests.includes(request.id)
-                                ? "heroicons:chevron-down"
-                                : "heroicons:chevron-right"
-                            }
-                            className="w-4 h-4"
-                          />
-                          {request.sid}
+                        <div>
+                          <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                            {project.project_name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {project.region_display}
+                          </div>
                         </div>
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.projectName}
-                      </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        <Badge
-                          className={`${
-                            request.type === "Project"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-purple-100 text-purple-800"
-                          } text-xs`}
-                        >
-                          {request.type}
+                      <td className="px-3 py-2">
+                        <Badge className={`${getCaseTypeColor(project.case_type)} text-xs`}>
+                          {project.case_type === 1 ? "Completes Only" : "With Test Cases"}
                         </Badge>
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        <Badge
-                          className={`${getStatusColor(request.status)} text-xs`}
-                        >
-                          {request.status}
+                      <td className="px-3 py-2">
+                        <Badge className={`${getStatusColor(project.status)} text-xs`}>
+                          {project.status_display}
                         </Badge>
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.completes}
-                      </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.device}
-                      </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.screenshot}
-                      </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        <div className="flex flex-wrap gap-1">
-                          {request.testCases
-                            .slice(0, 2)
-                            .map((testCase, idx) => (
-                              <Badge
-                                key={idx}
-                                className="text-green-600 bg-green-50 text-xs"
-                              >
-                                {testCase}
-                              </Badge>
-                            ))}
-                          {request.testCases.length > 2 && (
-                            <Badge className="text-gray-600 bg-gray-50 text-xs">
-                              +{request.testCases.length - 2} more
-                            </Badge>
+                      <td className="px-3 py-2">
+                        <div className="text-sm text-gray-900">
+                          {project.test_cases_summary.completed_test_cases}/{project.test_cases_summary.total_test_cases}
+                          {project.test_cases_summary.total_test_cases > 0 && (
+                            <Icon icon="heroicons:check-circle" className="w-3 h-3 inline ml-1 text-green-500" />
                           )}
                         </div>
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-900"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.userName}
+                      <td className="px-3 py-2 text-sm text-gray-600">
+                        {project.default_settings.device_type}
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm text-gray-500"
-                        onClick={() => toggleRequestExpansion(request.id)}
-                      >
-                        {request.lastUpdated}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-600">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenExecution(request.id)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
-                        >
-                          <Icon
-                            icon="heroicons:ellipsis-horizontal"
-                            className="w-4 h-4"
-                          />
-                        </Button>
-                      </td>
-                    </tr>
-
-                    {/* Expanded Detail Row */}
-                    {expandedRequests.includes(request.id) && (
-                      <tr>
-                        <td colSpan={11} className="px-0 py-0">
-                          <div className="bg-gray-50 border-t border-gray-200">
-                            <div className="p-4">
-                              <h4 className="font-medium text-gray-900 mb-3">
-                                Request Details for {request.sid}
-                              </h4>
-                              <div className="bg-white rounded border overflow-hidden">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Request ID
-                                    </label>
-                                    <p className="text-sm font-mono text-blue-600">
-                                      {request.requestId}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Created Date
-                                    </label>
-                                    <p className="text-sm text-gray-900">
-                                      {request.createdDate}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Estimated Completion
-                                    </label>
-                                    <p className="text-sm text-gray-900">
-                                      {request.estimatedCompletion}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Survey URL
-                                    </label>
-                                    <p className="text-sm text-blue-600 truncate">
-                                      {request.surveyUrl}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Priority
-                                    </label>
-                                    <Badge
-                                      className={`${
-                                        request.priority === "High" ||
-                                        request.priority === "Critical"
-                                          ? "bg-red-100 text-red-800"
-                                          : request.priority === "Medium"
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-green-100 text-green-800"
-                                      } text-xs`}
-                                    >
-                                      {request.priority}
-                                    </Badge>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">
-                                      Progress
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                                        <div
-                                          className="bg-blue-600 h-1.5 rounded-full"
-                                          style={{
-                                            width: `${request.progressPercent}%`,
-                                          }}
-                                        ></div>
-                                      </div>
-                                      <span className="text-xs text-gray-600">
-                                        {request.progressPercent}%
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+                      <td className="px-3 py-2">
+                        {project.mdd_processing ? (
+                          <div className="text-xs">
+                            <div className="text-gray-900 font-medium truncate max-w-24">
+                              {project.mdd_processing.filename}
+                            </div>
+                            <div className="text-gray-500">
+                              {project.mdd_processing.variables_count} vars
                             </div>
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">No MDD</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        {project.created_by}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-500">
+                        {getTimeAgo(project.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          {filteredRequests.length === 0 && (
+          {filteredProjects.length === 0 && !isLoadingProjects && (
             <div className="text-center py-12">
               <Icon
                 icon="heroicons:document-magnifying-glass"
                 className="w-12 h-12 text-gray-400 mx-auto mb-4"
               />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No requests found
+                No projects found
               </h3>
               <p className="text-gray-500">
                 {searchTerm
-                  ? `No requests match your search "${searchTerm}"`
-                  : "There are no requests to display"}
+                  ? `No projects match your search "${searchTerm}"`
+                  : "There are no projects to display"}
               </p>
             </div>
           )}
 
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50">
+          <div className="px-6 py-3 border-t border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between">
               <p className="text-sm text-slate-600">
-                Showing {filteredRequests.length} of {dashboardRequests.length}{" "}
-                total requests
+                Showing {filteredProjects.length} of {projectsData.length} projects
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="text-xs">
@@ -663,44 +583,47 @@ export default function Index() {
         </CardContent>
       </Card>
 
-      {/* New Request Modal */}
-      {showNewRequestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 bg-slate-50">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-slate-800">
-                  Create New Request
-                </h2>
-                <Button
-                  onClick={() => setShowNewRequestModal(false)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-500 hover:text-slate-700"
-                >
-                  <Icon icon="heroicons:x-mark" className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-            <div className="p-6">
-              <SurveyForm
-                onSubmit={(data) => {
-                  handleSubmitRequest(data);
-                  setShowNewRequestModal(false);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Execution Modal */}
       {showExecutionModal && (
-        <ExecutionModal
+        <ExecutionModal 
+          isOpen={showExecutionModal}
           requestId={activeRequestId}
           onClose={() => setShowExecutionModal(false)}
         />
       )}
+
+      {/* Create Request Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-gray-800">
+                  Create New Survey Request
+                </DialogTitle>
+                <p className="text-gray-600 mt-1">
+                  Configure your survey testing parameters and generate test cases
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <Icon icon="heroicons:x-mark" className="w-6 h-6" />
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto pr-2">
+            <SurveyForm 
+              onSubmit={handleCreateSubmit} 
+              onClose={() => setShowCreateModal(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

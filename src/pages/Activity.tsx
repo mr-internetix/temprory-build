@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout/DashboardLayout";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -10,394 +10,406 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Icon } from "@iconify/react";
+import { projectApi, Activity } from "../lib/api";
 
-interface ActivityItem {
-  id: string;
-  type: "request" | "system" | "user" | "project";
-  action: string;
-  description: string;
-  user: string;
-  timestamp: string;
-  metadata?: {
-    projectName?: string;
-    requestId?: string;
-    status?: string;
-    priority?: string;
-  };
-}
-
-export default function Activity() {
+export default function ActivityPage() {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 20;
 
-  // Sample activity data
-  const activities: ActivityItem[] = [
-    {
-      id: "act-001",
-      type: "request",
-      action: "Request Created",
-      description: "New survey request created for E-commerce Platform Testing",
-      user: "John Smith",
-      timestamp: "2025-01-20 14:30:00",
-      metadata: {
-        projectName: "E-commerce Platform Testing",
-        requestId: "req-001",
-        priority: "High",
-      },
-    },
-    {
-      id: "act-002",
-      type: "system",
-      action: "Test Execution Completed",
-      description: "Automated test execution completed successfully",
-      user: "System",
-      timestamp: "2025-01-20 13:45:00",
-      metadata: {
-        requestId: "req-001",
-        status: "completed",
-      },
-    },
-    {
-      id: "act-003",
-      type: "user",
-      action: "User Login",
-      description: "User logged into the system",
-      user: "Sarah Johnson",
-      timestamp: "2025-01-20 13:15:00",
-    },
-    {
-      id: "act-004",
-      type: "request",
-      action: "Request Updated",
-      description: "Survey request status updated to In Progress",
-      user: "Michael Brown",
-      timestamp: "2025-01-20 12:30:00",
-      metadata: {
-        projectName: "Mobile App Usability Study",
-        requestId: "req-002",
-        status: "in-progress",
-      },
-    },
-    {
-      id: "act-005",
-      type: "project",
-      action: "Project Archived",
-      description: "Project moved to archive",
-      user: "Emily Davis",
-      timestamp: "2025-01-20 11:20:00",
-      metadata: {
-        projectName: "Legacy Survey Analysis",
-      },
-    },
-    {
-      id: "act-006",
-      type: "system",
-      action: "Database Backup",
-      description: "Automated database backup completed",
-      user: "System",
-      timestamp: "2025-01-20 10:00:00",
-    },
-    {
-      id: "act-007",
-      type: "request",
-      action: "Request Deleted",
-      description: "Survey request was permanently deleted",
-      user: "David Wilson",
-      timestamp: "2025-01-20 09:45:00",
-      metadata: {
-        requestId: "req-003",
-      },
-    },
-    {
-      id: "act-008",
-      type: "user",
-      action: "Profile Updated",
-      description: "User profile information updated",
-      user: "John Smith",
-      timestamp: "2025-01-20 09:15:00",
-    },
-  ];
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "request":
-        return "heroicons:clipboard-document-list";
-      case "system":
-        return "heroicons:cog-6-tooth";
-      case "user":
-        return "heroicons:user";
-      case "project":
-        return "heroicons:folder";
-      default:
-        return "heroicons:information-circle";
+  // Fetch activities
+  const fetchActivities = async (page: number = 1, search: string = "") => {
+    setIsLoading(true);
+    try {
+      const response = await projectApi.getActivities(page, pageSize);
+      setActivities(response.activities);
+      setCurrentPage(response.pagination.page);
+      setTotalPages(response.pagination.total_pages);
+      setTotalCount(response.pagination.total_count);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "request":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "system":
-        return "bg-gray-100 text-gray-700 border-gray-200";
-      case "user":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "project":
-        return "bg-purple-100 text-purple-700 border-purple-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
+  useEffect(() => {
+    fetchActivities(1, searchTerm);
+  }, []);
+
+  // Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchActivities(1, searchTerm);
+  };
+
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchActivities(page, searchTerm);
     }
   };
 
-  const getRelativeTime = (timestamp: string) => {
-    const now = new Date();
-    const activityTime = new Date(timestamp);
-    const diffMs = now.getTime() - activityTime.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
+  const getActivityColor = (type: string) => {
+    const colors: Record<string, string> = {
+      project_created: "bg-emerald-50 text-emerald-600 border-emerald-100",
+      testcase_created: "bg-blue-50 text-blue-600 border-blue-100", 
+      project_archived: "bg-amber-50 text-amber-600 border-amber-100",
+      project_updated: "bg-purple-50 text-purple-600 border-purple-100",
+    };
+    return colors[type] || "bg-slate-50 text-slate-600 border-slate-100";
+  };
 
-    if (diffHours < 1) {
-      return "Just now";
-    } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
-    } else if (diffDays === 1) {
-      return "Yesterday";
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return activityTime.toLocaleDateString();
+  const getActivityIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      project_created: "heroicons:plus",
+      testcase_created: "heroicons:document-plus",
+      project_archived: "heroicons:archive-box", 
+      project_updated: "heroicons:pencil",
+    };
+    return icons[type] || "heroicons:document-text";
+  };
+
+  const getActivityTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      project_created: "Project Created",
+      testcase_created: "Test Case Created",
+      project_archived: "Project Archived",
+      project_updated: "Project Updated",
+    };
+    return labels[type] || type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const handleActivityClick = (activity: Activity) => {
+    // Navigate based on activity type
+    if (activity.project?.id) {
+      window.location.href = `/projects/${activity.project.id}`;
     }
   };
 
-  const filteredActivities = activities.filter((activity) => {
-    const matchesSearch =
-      activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (activity.metadata?.projectName &&
-        activity.metadata.projectName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()));
-
-    const matchesFilter = filterType === "all" || activity.type === filterType;
-
-    return matchesSearch && matchesFilter;
+  // Filter activities based on search term
+  const filteredActivities = activities.filter(activity => {
+    if (!searchTerm.trim()) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      activity.title.toLowerCase().includes(searchLower) ||
+      activity.username.toLowerCase().includes(searchLower) ||
+      activity.project?.name.toLowerCase().includes(searchLower) ||
+      activity.test_case?.name.toLowerCase().includes(searchLower)
+    );
   });
-
-  const filterOptions = [
-    { value: "all", label: "All Activity", icon: "heroicons:list-bullet" },
-    {
-      value: "request",
-      label: "Requests",
-      icon: "heroicons:clipboard-document-list",
-    },
-    { value: "system", label: "System", icon: "heroicons:cog-6-tooth" },
-    { value: "user", label: "Users", icon: "heroicons:user" },
-    { value: "project", label: "Projects", icon: "heroicons:folder" },
-  ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="sm:flex sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Activity Feed</h1>
-            <p className="text-slate-600 mt-1">
-              Track all system activities and user actions
+            <h1 className="text-3xl font-bold text-slate-800">Activity Feed</h1>
+            <p className="mt-2 text-slate-600">
+              Track all project and test case activities across your organization
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => window.location.reload()}
-          >
-            <Icon icon="heroicons:arrow-path" className="w-4 h-4" />
-            Refresh
-          </Button>
+          <div className="mt-4 sm:mt-0">
+            <Button
+              onClick={() => window.location.href = "/"}
+              variant="outline"
+              className="border-slate-300"
+            >
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex flex-wrap gap-2">
-                {filterOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={
-                      filterType === option.value ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => setFilterType(option.value)}
-                    className="flex items-center gap-2"
-                  >
-                    <Icon icon={option.icon} className="w-4 h-4" />
-                    {option.label}
-                  </Button>
-                ))}
+      {/* Activity Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:chart-bar" className="w-5 h-5 text-emerald-600" />
+                </div>
               </div>
-              <div className="relative w-full sm:w-64">
-                <Icon
-                  icon="heroicons:magnifying-glass"
-                  className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
-                <Input
-                  placeholder="Search activities..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Total Activities</p>
+                <p className="text-lg font-semibold text-gray-900">{totalCount}</p>
               </div>
             </div>
-          </CardHeader>
+          </CardContent>
         </Card>
-
-        {/* Activity Feed */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon icon="heroicons:clock" className="w-5 h-5" />
-              Recent Activity ({filteredActivities.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredActivities.length === 0 ? (
-              <div className="text-center py-12">
-                <Icon
-                  icon="heroicons:exclamation-circle"
-                  className="w-12 h-12 text-gray-400 mx-auto mb-4"
-                />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No Activities Found
-                </h3>
-                <p className="text-gray-500">
-                  {searchTerm
-                    ? "Try adjusting your search criteria"
-                    : "No activities match the selected filter"}
+        
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:folder-plus" className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Projects Created</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {activities.filter(a => a.activity_type === 'project_created').length}
                 </p>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredActivities.map((activity, index) => (
-                  <div
-                    key={activity.id}
-                    className={`flex items-start gap-4 p-4 rounded-lg border ${
-                      index === 0
-                        ? "bg-blue-50 border-blue-200"
-                        : "bg-gray-50 border-gray-200"
-                    } hover:shadow-sm transition-shadow`}
-                  >
-                    {/* Icon */}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:document-plus" className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Test Cases Created</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {activities.filter(a => a.activity_type === 'testcase_created').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Icon icon="heroicons:archive-box" className="w-5 h-5 text-amber-600" />
+                </div>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-500">Archived Projects</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {activities.filter(a => a.activity_type === 'project_archived').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Filters */}
+      <Card className="border-slate-200 shadow-sm mb-6">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-3">
+          <CardTitle className="text-slate-800 text-base">Search Activities</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <div className="flex-1 relative">
+              <Icon
+                icon="heroicons:magnifying-glass"
+                className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
+              <Input
+                placeholder="Search by title, username, project name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <Icon icon="heroicons:arrow-path" className="w-4 h-4 animate-spin" />
+              ) : (
+                <Icon icon="heroicons:magnifying-glass" className="w-4 h-4" />
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Activities List */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="border-b border-slate-100 bg-slate-50/50 py-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-slate-800 text-base">
+              Activity Timeline
+            </CardTitle>
+            <div className="text-sm text-slate-600">
+              Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Icon icon="heroicons:arrow-path" className="w-8 h-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-500">Loading activities...</span>
+            </div>
+          ) : filteredActivities.length === 0 ? (
+            <div className="text-center py-12">
+              <Icon
+                icon="heroicons:exclamation-triangle"
+                className="w-12 h-12 text-gray-400 mx-auto mb-4"
+              />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No activities found
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm
+                  ? `No activities match your search "${searchTerm}"`
+                  : "No activities to display"}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {filteredActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => handleActivityClick(activity)}
+                >
+                  <div className="flex items-start space-x-4">
                     <div
-                      className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getTypeColor(activity.type)} border`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${getActivityColor(
+                        activity.activity_type,
+                      )}`}
                     >
                       <Icon
-                        icon={getTypeIcon(activity.type)}
+                        icon={getActivityIcon(activity.activity_type)}
                         className="w-5 h-5"
                       />
                     </div>
-
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-slate-900">
-                              {activity.action}
-                            </p>
-                            <Badge variant="outline" className="text-xs">
-                              {activity.type}
-                            </Badge>
-                          </div>
-                          <p className="text-slate-600 text-sm mb-2">
-                            {activity.description}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-slate-500">
-                            <span className="flex items-center gap-1">
-                              <Icon icon="heroicons:user" className="w-3 h-3" />
-                              {activity.user}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Icon
-                                icon="heroicons:clock"
-                                className="w-3 h-3"
-                              />
-                              {getRelativeTime(activity.timestamp)}
-                            </span>
-                          </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            {activity.title}
+                          </h3>
+                          <Badge className={`text-xs ${getActivityColor(activity.activity_type)}`}>
+                            {getActivityTypeLabel(activity.activity_type)}
+                          </Badge>
                         </div>
-                        <div className="text-right text-xs text-slate-400">
-                          {new Date(activity.timestamp).toLocaleTimeString()}
+                        <div className="text-sm text-gray-500">
+                          {activity.time_ago}
                         </div>
                       </div>
+                      
+                      <div className="mt-1 flex items-center gap-4 text-sm text-gray-600">
+                        <span>by {activity.username}</span>
+                        {activity.project && (
+                          <span className="flex items-center gap-1">
+                            <Icon icon="heroicons:folder" className="w-4 h-4" />
+                            {activity.project.name}
+                            {activity.project.archived && (
+                              <Badge className="text-xs bg-amber-100 text-amber-800 ml-1">
+                                Archived
+                              </Badge>
+                            )}
+                          </span>
+                        )}
+                        {activity.test_case && (
+                          <span className="flex items-center gap-1">
+                            <Icon icon="heroicons:document" className="w-4 h-4" />
+                            {activity.test_case.name}
+                          </span>
+                        )}
+                      </div>
 
-                      {/* Metadata */}
                       {activity.metadata && (
-                        <div className="mt-3 pt-3 border-t border-slate-200">
-                          <div className="flex flex-wrap gap-2">
-                            {activity.metadata.projectName && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Icon
-                                  icon="heroicons:folder"
-                                  className="w-3 h-3 mr-1"
-                                />
-                                {activity.metadata.projectName}
-                              </Badge>
-                            )}
-                            {activity.metadata.requestId && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Icon
-                                  icon="heroicons:hashtag"
-                                  className="w-3 h-3 mr-1"
-                                />
-                                {activity.metadata.requestId}
-                              </Badge>
-                            )}
-                            {activity.metadata.status && (
-                              <Badge
-                                variant={
-                                  activity.metadata.status === "completed"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                                className="text-xs"
-                              >
-                                {activity.metadata.status}
-                              </Badge>
-                            )}
-                            {activity.metadata.priority && (
-                              <Badge
-                                variant={
-                                  activity.metadata.priority === "High"
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                                className="text-xs"
-                              >
-                                {activity.metadata.priority} Priority
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {activity.metadata.device_type && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800">
+                              {activity.metadata.device_type}
+                            </span>
+                          )}
+                          {activity.metadata.completes && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                              {activity.metadata.completes} completes
+                            </span>
+                          )}
+                          {activity.metadata.case_type && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                              Case Type {activity.metadata.case_type}
+                            </span>
+                          )}
+                          {activity.metadata.region && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                              {activity.metadata.region}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Load More */}
-        {filteredActivities.length > 0 && (
-          <div className="text-center">
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Icon icon="heroicons:arrow-down" className="w-4 h-4 mr-2" />
-              Load More Activities
-            </Button>
-          </div>
-        )}
-      </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-600">
+                  Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalCount)} of {totalCount} activities
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <Icon icon="heroicons:chevron-left" className="w-4 h-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = i + 1;
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(page)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    {totalPages > 5 && (
+                      <>
+                        <span className="px-2">...</span>
+                        <Button
+                          variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(totalPages)}
+                          className="w-8 h-8 p-0"
+                        >
+                          {totalPages}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <Icon icon="heroicons:chevron-right" className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }
