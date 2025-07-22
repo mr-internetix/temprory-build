@@ -1,17 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Search, X, ChevronDown, ChevronUp } from "lucide-react";
 import { MddQuestion } from "./SurveyForm";
 
 interface QuestionSelectorProps {
@@ -32,6 +26,8 @@ export function QuestionSelector({
   const [selectedQuestion, setSelectedQuestion] = useState(
     preSelectedQuestion || "",
   );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [assignmentType, setAssignmentType] = useState(
     existingQuestionData?.assignment_type || "assign",
   );
@@ -54,20 +50,97 @@ export function QuestionSelector({
     existingQuestionData?.boolean_value || false,
   );
 
-  // Create question options - use proper non-empty values
-  const questionOptions = [
-    { value: "please_select", label: "Please select question --" },
-    { value: "skip_termination", label: "Skip Termination logics" },
-    ...availableQuestions.map((q) => ({
-      value: q.id,
-      label: `${q.text} (${q.type})`, // Show variable name with type
-    })),
+  const searchRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Special options
+  const specialOptions = [
+    {
+      value: "skip_termination",
+      label: "Skip Termination logics",
+      type: "special",
+      description: "Auto avoid the selection of terminated options",
+    },
   ];
+
+  // Filter questions based on search query
+  const filteredQuestions = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [...specialOptions, ...availableQuestions.map((q) => ({
+        value: q.id,
+        label: `${q.text} (${q.type})`,
+        type: q.type,
+        description: `Variable ID: ${q.id}`,
+        question: q,
+      }))];
+    }
+
+    const query = searchQuery.toLowerCase();
+
+    // Filter special options
+    const filteredSpecial = specialOptions.filter((option) =>
+      option.label.toLowerCase().includes(query) ||
+      option.description.toLowerCase().includes(query)
+    );
+
+    // Filter regular questions
+    const filteredRegular = availableQuestions
+      .filter((q) =>
+        q.id.toLowerCase().includes(query) ||
+        q.text.toLowerCase().includes(query) ||
+        q.type.toLowerCase().includes(query)
+      )
+      .map((q) => ({
+        value: q.id,
+        label: `${q.text} (${q.type})`,
+        type: q.type,
+        description: `Variable ID: ${q.id}`,
+        question: q,
+      }));
+
+    return [...filteredSpecial, ...filteredRegular];
+  }, [searchQuery, availableQuestions]);
 
   // Get the selected question data
   const selectedQuestionData = availableQuestions.find(
     (q) => q.id === selectedQuestion,
   );
+
+  // Get display text for selected question
+  const getSelectedQuestionDisplay = () => {
+    if (!selectedQuestion) return "";
+    if (selectedQuestion === "skip_termination") return "Skip Termination logics";
+    const question = availableQuestions.find(q => q.id === selectedQuestion);
+    return question ? `${question.text} (${question.type})` : selectedQuestion;
+  };
+
+  // Handle clicking outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleQuestionSelect = (questionValue: string) => {
+    setSelectedQuestion(questionValue);
+    setIsSearchOpen(false);
+    setSearchQuery("");
+  };
+
+  const handleSearchFocus = () => {
+    setIsSearchOpen(true);
+  };
+
+  const clearSelection = () => {
+    setSelectedQuestion("");
+    setSearchQuery("");
+    setIsSearchOpen(false);
+  };
 
   const handleAnswerToggle = (answerId: string) => {
     setSelectedAnswers((prev) =>
@@ -78,7 +151,7 @@ export function QuestionSelector({
   };
 
   const handleSave = () => {
-    if (!selectedQuestion || selectedQuestion === "please_select") {
+    if (!selectedQuestion) {
       return;
     }
 
@@ -120,7 +193,7 @@ export function QuestionSelector({
     onQuestionSelected(selectedQuestion, config);
   };
 
-  const showQuestionConfig = selectedQuestion && selectedQuestion !== "please_select";
+  const showQuestionConfig = selectedQuestion && selectedQuestion !== "";
 
   const renderInputByType = () => {
     if (!selectedQuestionData) return null;
@@ -251,35 +324,103 @@ export function QuestionSelector({
 
   return (
     <div className="space-y-4">
-      {/* Question Dropdown */}
-      <div>
+      {/* Question Search Bar */}
+      <div className="relative" ref={dropdownRef}>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Select Question:
+          Search & Select Question:
         </label>
-        <Select value={selectedQuestion} onValueChange={setSelectedQuestion}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Please select question --" />
-          </SelectTrigger>
-          <SelectContent 
-            className="max-h-64 overflow-y-auto z-[10000] max-w-[600px]"
-            position="popper"
-            sideOffset={4}
-            align="start"
-          >
-            {questionOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value} className="max-w-full">
-                <div className="w-full max-w-[600px]">
-                  <div className="text-sm font-medium truncate">{option.label}</div>
-                  {option.value === "skip_termination" && (
-                    <div className="text-red-500 text-xs mt-1 whitespace-normal">
-                      If selected, this will auto avoid the selection of terminated options
+
+        {/* Selected Question Display */}
+        {selectedQuestion && (
+          <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-700">
+              Selected: {getSelectedQuestionDisplay()}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelection}
+              className="h-6 w-6 p-0 text-blue-700 hover:bg-blue-200"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            ref={searchRef}
+            type="text"
+            placeholder="Search questions by ID, text, or type..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={handleSearchFocus}
+            className="pl-10 pr-10"
+          />
+          {isSearchOpen ? (
+            <ChevronUp className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          ) : (
+            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          )}
+        </div>
+
+        {/* Dropdown with suggestions */}
+        {isSearchOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-64 overflow-y-auto">
+            {filteredQuestions.length > 0 ? (
+              <>
+                {filteredQuestions.map((option) => (
+                  <div
+                    key={option.value}
+                    onClick={() => handleQuestionSelect(option.value)}
+                    className="px-3 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 truncate">
+                          {option.label}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {option.description}
+                        </div>
+                        {option.value === "skip_termination" && (
+                          <div className="text-red-500 text-xs mt-1">
+                            Auto avoid terminated options
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-2 flex-shrink-0">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          option.type === "special" 
+                            ? "bg-red-100 text-red-800"
+                            : option.type === "categorical"
+                            ? "bg-green-100 text-green-800"
+                            : option.type === "text"
+                            ? "bg-blue-100 text-blue-800"
+                            : option.type === "numeric" || option.type === "double"
+                            ? "bg-purple-100 text-purple-800"
+                            : option.type === "boolean"
+                            ? "bg-orange-100 text-orange-800"
+                            : option.type === "date"
+                            ? "bg-pink-100 text-pink-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}>
+                          {option.type}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="px-3 py-4 text-sm text-gray-500 text-center">
+                {searchQuery ? `No questions found for "${searchQuery}"` : "No questions available"}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Show selected question info */}
@@ -390,7 +531,7 @@ export function QuestionSelector({
 
       {!showQuestionConfig && (
         <div className="text-xs text-gray-500 italic">
-          Select a question to configure its options
+          Search and select a question to configure its options
         </div>
       )}
     </div>

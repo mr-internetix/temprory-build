@@ -15,11 +15,12 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     try {
-      // This already includes token and handles refresh automatically
+      // Use authService.authenticatedRequest which handles token refresh automatically
       const response = await authService.authenticatedRequest(url, options);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
       
       return await response.json();
@@ -37,24 +38,28 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, data?: any, headers?: Record<string, string>): Promise<T> {
+    // Don't set Content-Type for FormData - let browser handle it
+    const requestHeaders = data instanceof FormData 
+      ? { ...headers }
+      : { "Content-Type": "application/json", ...headers };
+
     return this.request<T>(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: data ? JSON.stringify(data) : undefined,
+      headers: requestHeaders,
+      body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
     });
   }
 
   async put<T>(endpoint: string, data?: any, headers?: Record<string, string>): Promise<T> {
+    // Don't set Content-Type for FormData - let browser handle it
+    const requestHeaders = data instanceof FormData 
+      ? { ...headers }
+      : { "Content-Type": "application/json", ...headers };
+
     return this.request<T>(endpoint, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: data ? JSON.stringify(data) : undefined,
+      headers: requestHeaders,
+      body: data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined),
     });
   }
 
@@ -374,7 +379,7 @@ export interface ProjectsHierarchyResponse {
 
 // Project API Functions
 export const projectApi = {
-  // Create project without MDD file - Updated to use FormData
+  // Create project without MDD file - Now using apiClient
   async createProject(data: ProjectCreationRequest): Promise<ProjectCreationResponse> {
     console.log("📤 Creating project with data:", data);
     
@@ -387,42 +392,16 @@ export const projectApi = {
         console.log(`📝 FormData: ${key} = ${value}`);
       });
 
-      const url = `${API_BASE_URL}/api/idatagenerator/projects/create/`;
-      console.log("🔗 Making request to:", url);
-      
-      // Use authService.authenticatedRequest for FormData
-      const response = await authService.authenticatedRequest(url, {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type for FormData - browser will set it automatically
-        // authService.authenticatedRequest will handle Authorization header
-      });
-
-      console.log("📥 Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Error response body:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const result = await response.json();
+      const result = await apiClient.post<ProjectCreationResponse>('/api/idatagenerator/projects/create/', formData);
       console.log("✅ Project created successfully:", result);
       return result;
     } catch (error) {
       console.error("❌ Create project error:", error);
-      
-      // If it's a fetch error, try to get more details
-      if (error instanceof Error && error.message.includes('HTTP error')) {
-        console.error("❌ This is likely a server-side error. Check your Django backend.");
-        console.error("❌ Token being used:", authService.getAccessToken() ? "Token present" : "No token");
-      }
-      
       throw error;
     }
   },
 
-  // Create project with MDD file - Updated to use authService.authenticatedRequest
+  // Create project with MDD file - Now using apiClient
   async createProjectWithMDD(data: ProjectCreationRequest, mddFile: File): Promise<ProjectCreationResponse> {
     console.log("📤 Creating project with MDD file:", { data, fileName: mddFile.name });
     
@@ -439,27 +418,7 @@ export const projectApi = {
       formData.append('mdd_file', mddFile);
       console.log("📁 Added MDD file to FormData:", mddFile.name);
 
-      const url = `${API_BASE_URL}/api/idatagenerator/projects/create/`;
-      console.log("🔗 Making request to:", url);
-      
-      // Use authService.authenticatedRequest instead of direct fetch
-      // This ensures proper token handling and refresh logic
-      const response = await authService.authenticatedRequest(url, {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type for FormData - browser will set it automatically
-        // authService.authenticatedRequest will handle Authorization header
-      });
-
-      console.log("📥 Response status:", response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Error response body:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const result = await response.json();
+      const result = await apiClient.post<ProjectCreationResponse>('/api/idatagenerator/projects/create/', formData);
       console.log("✅ Project with MDD created successfully:", result);
       return result;
     } catch (error) {
@@ -472,7 +431,6 @@ export const projectApi = {
   async getProjectVariables(projectId: string): Promise<MddVariablesResponse> {
     console.log("📤 Fetching variables for project:", projectId);
     try {
-      // Fetch all variables by setting a large page_size or using pagination
       const response = await apiClient.get<MddVariablesResponse>(`/api/idatagenerator/projects/${projectId}/variables/?page_size=10000`);
       console.log("✅ Variables fetched successfully:", response);
       return response;

@@ -204,6 +204,58 @@ class AuthService {
     const token = this.getAccessToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
+
+  private async performTokenRefresh(): Promise<string> {
+    try {
+      console.log("🔄 Refreshing access token...");
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          refresh: this.getRefreshToken(), // Use this.getRefreshToken() instead of this.refreshToken
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Refresh token response:", errorText);
+        
+        if (response.status === 401) {
+          console.error("❌ Refresh token expired, logging out...");
+          this.clearTokens();
+          window.location.href = '/login';
+          throw new Error('Refresh token expired');
+        }
+        throw new Error(`Failed to refresh token: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      // Updated to match your API response: {"access": "token"}
+      const newAccessToken = data.access;
+
+      if (!newAccessToken) {
+        throw new Error('No access token in refresh response');
+      }
+
+      // Save the new access token (keep the same refresh token)
+      this.setTokens(newAccessToken, this.getRefreshToken()!); // Use setTokens method
+      console.log("✅ Access token refreshed successfully");
+      
+      return newAccessToken;
+    } catch (error) {
+      console.error("❌ Token refresh failed:", error);
+      
+      // Only clear tokens if it's an auth error
+      if (error instanceof Error && (error.message.includes('401') || error.message.includes('expired'))) {
+        this.clearTokens();
+      }
+      
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();
